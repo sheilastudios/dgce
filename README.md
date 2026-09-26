@@ -32,10 +32,11 @@ not granted under that license. See `LICENSE`, `CONTRIBUTING.md`, and
 ## Install
 
 1. Download or clone this repository.
-2. In Chrome, open `chrome://extensions`.
-3. Turn on **Developer mode**.
-4. Choose **Load unpacked** and select the `extension/` directory from this repo.
-5. Open a supported DreamGen session at `https://v2.dreamgen.com/`.
+2. If you downloaded a ZIP, extract it first.
+3. In Chrome, open `chrome://extensions`.
+4. Turn on **Developer mode**.
+5. Choose **Load unpacked** and select the extracted `extension/` directory from this repo.
+6. Open a supported DreamGen session at `https://v2.dreamgen.com/`.
 
 Use a dedicated browser profile for testing if you want a clean lane. Do not
 run multiple DGCE variants on the same page.
