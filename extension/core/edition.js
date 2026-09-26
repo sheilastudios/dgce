@@ -1,7 +1,7 @@
-// Free has no engine implementation or entitlement switch.
+// This public build has no campaign engine implementation or entitlement switch.
 export const IS_FREE_EDITION = true;
 export const FREE_TABS = Object.freeze(['Memory', 'People', 'Places', 'Events', 'Objects', 'Resolve', 'Campaign', 'Deck', 'RNG', 'Schedules', 'Log', 'Debug', 'Data']);
-export const FREE_WORKSPACE_NOTICE = 'DGCE Free cannot use this workspace because it contains Full-edition data. Nothing was changed. Export it and reopen it in Full; no automatic downgrade is performed.';
+export const FREE_WORKSPACE_NOTICE = 'This public DGCE build cannot use this workspace because it contains campaign or rule data that is still in development and not included here. Nothing was changed. Export it and reopen it in a compatible build; no automatic downgrade is performed.';
 export function editionWorkspaceIssue(ws) {
   if (!ws) return null;
   if (ws.campaign != null || ws.settings?.RNG_enabled
@@ -16,7 +16,7 @@ export function assertEditionWorkspace(ws) {
   if (issue) throw new Error(issue);
 }
 export function requireFullEdition(feature) {
-  throw new Error(`${feature} is not available in DGCE Free; it is in development. Nothing was applied.`);
+  throw new Error(`${feature} is not available in this public DGCE build; it is still in development. Nothing was applied.`);
 }
 export function assertEditionCommand(text) {
   if (/^\s*\/(?:check|attack|initiative|skills|status|sheet|inventory|where|nearby|route|campaign|setup|floor|level|rest|equip|unequip|buy|sell|travel|move|social)\b/i.test(String(text ?? ''))) requireFullEdition('Campaign commands');

@@ -1,4 +1,5 @@
-// DGCE Free: continuity-only controller. No Full engine is shipped.
+// DGCE public build: continuity-only controller. In-development campaign
+// engine surfaces are not shipped here.
 import { CSS } from './styles.js';
 import { IS_FREE_EDITION, FREE_TABS, editionWorkspaceIssue, assertEditionWorkspace, assertEditionCommand, requireFullEdition } from '../core/edition.js';
 import { HOST_PACKET_EQUIVALENCE_NOTICE } from '../core/host-packet-equivalence.js';
@@ -2392,7 +2393,7 @@ function continuityToolsSection() {
     },
   });
 }
-// Free-only controller pieces; shared continuity functions are extracted separately.
+// Public-build controller pieces; shared continuity functions are extracted separately.
 function definedEntityGroups() { return readAuthoredEntities(); }
 function mechanicalBasis(ws) {
   const { revision, updated_at, writer_tab_id, injections, mechanical_turns, delivery_metrics,
@@ -2579,7 +2580,7 @@ async function verifyFreePlainOrdinaryReadback() {
   }
 }
 function header() {
-  return el('header', {}, el('h1', {}, 'Continuity Free'),
+  return el('header', {}, el('h1', {}, 'Continuity'),
     state.ws ? el('span', { class: 'rev' }, `rev ${state.ws.revision}`) : null,
     el('button', { class: 'act shrink', onclick: toggle }, 'Close'));
 }
@@ -2590,7 +2591,7 @@ function previewTab(name) {
   };
   return [el('section', {}, el('h2', {}, `${name} — In development`),
     el('p', {}, descriptions[name]),
-    el('p', { class: 'empty' }, 'A preview of planned work, not an active tool. No release date or inclusion in Free is promised. The implementation is not included in this download.'))];
+    el('p', { class: 'empty' }, 'A preview of planned work, not an active tool. No release date is promised. The implementation is not included in this public build.'))];
 }
 function body() {
   const main = el('main');
@@ -2658,13 +2659,13 @@ function dataTab() {
     el('button', { class: 'act', onclick: copyBackup }, 'Copy export JSON'),
     el('button', { class: 'act', onclick: () => {
       const blob = new Blob([exportToJSON(state.ws)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob), anchor = el('a', { href: url, download: 'dgce-free-backup.json' });
+      const url = URL.createObjectURL(blob), anchor = el('a', { href: url, download: 'dgce-backup.json' });
       anchor.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
     } }, 'Download backup'),
     el('h3', {}, 'Restore continuity memory'), loadFile, input,
     el('button', { class: 'act', onclick: inspect }, 'Inspect backup'),
     ...['merge', 'replace'].map(mode => el('button', { class: 'act', onclick: () => restoreContinuityBackup(input.value, mode) }, mode === 'merge' ? 'Import (add only)' : 'Import (replace)')),
-    el('p', {}, 'Campaign clean-start files and other Full-only data cannot be imported into Free. Nothing is silently stripped.'))];
+    el('p', {}, 'Campaign clean-start files and other in-development data that are not included in this public build cannot be imported here. Nothing is silently stripped.'))];
 }
 let restoreBusy = false;
 async function restoreContinuityBackup(json, mode) {

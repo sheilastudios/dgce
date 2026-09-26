@@ -1,6 +1,6 @@
-# DGCE Free 0.7.146 — standalone Free edition
+# DGCE 0.7.146 — public build
 
-DGCE Free 0.7.146 is the public Free edition of the DreamGen continuity
+DGCE 0.7.146 is the current public build of the DreamGen continuity
 companion extension. It provides continuity tools, selective recall,
 backup/import, and Chaos Deck support for DreamGen sessions, while leaving
 DreamGen responsible for the model, chat, and scene generation.
@@ -10,7 +10,7 @@ authenticated session readback for ordinary sends, persisted request parent and
 timing evidence, durable-before-adoption guards, and same-document route
 handling after host navigation. No new permissions were added.
 
-DGCE Free is an unofficial community extension. It is not affiliated with or
+DGCE is an unofficial community extension. It is not affiliated with or
 endorsed by DreamGen. The source code in this repository is licensed under the
 Mozilla Public License 2.0. Project names, logos, and other brand assets are
 not granted under that license. See `LICENSE`, `CONTRIBUTING.md`, and
@@ -30,55 +30,58 @@ DreamGen still provides the model and conversation. This is not a transcript bac
 ## License and marks
 
 The source code in this repository is licensed under the Mozilla Public
-License, v. 2.0. This repository contains the Free edition only.
+License, v. 2.0. This repository contains the current public build.
 
-Any separate paid or proprietary edition should be distributed as a separate
-larger work or separate modules under its own terms, while changes to files in
-this repository remain governed by MPL-2.0.
+If future builds, experimental branches, or larger works are distributed
+separately, changes to files in this repository remain governed by MPL-2.0.
 
 The DGCE name, associated logos/icons, and Sheila Studios brand assets are not
 licensed under MPL-2.0. References to DreamGen are nominative only; third-party
 marks belong to their respective owners. See `TRADEMARKS.md` for practical use
 rules.
 
-## Physically removed
+## In-development surfaces not included in this public build
 
 Campaign builder, publication, character generation, mechanical checks, combat,
-skill progression, campaign proposal admission, configurable RNG and rule packs.
-These implementation modules are absent, not just disabled. No Full/private
-checkout or extraction script is needed to load or test this directory.
-The build selects the edition; an imported setting cannot activate these paths.
-Campaign and RNG tabs contain static "In development" previews, not tools
-or purchasing links. This is feature separation, not DRM.
+skill progression, campaign proposal admission, configurable RNG, and rule
+packs are still in development and are not included in this public build.
+No additional checkout or extraction script is needed to load or test this
+directory. Imported settings cannot activate code that is not present here.
+Campaign and RNG tabs contain static "In development" previews, not active
+tools. This is feature scoping, not DRM.
 
 Some helper filenames retain historical names (`mechanical-submit.js`,
-`command-palette.js`, `builder-transcript.js`). Their Free contents support native
-sending, composer editing and history evidence, not Full engines, the command
-palette or builder-transcript deletion.
+`command-palette.js`, `builder-transcript.js`). Their contents in this public
+build support native sending, composer editing, and history evidence; the
+in-development campaign engine, command palette, and builder-transcript
+deletion flows are not included here.
 
 Deck uses only an unbiased random-index helper, not RNG vectors or game rules.
-Full-edition campaign/RNG/rule-pack workspaces are export-only in Free.
-Imports containing that data are refused without modifying the target. There is
-no automatic downgrade or selective data loss. The normal source remains Full.
+Workspaces containing campaign/RNG/rule-pack data from in-development surfaces
+remain export-only in this build. Imports containing that data are refused
+without modifying the target. There is no automatic downgrade or selective
+data loss.
 
 ## Test this artifact
 
 Use current Node.js with the built-in test runner and Web Crypto; there are no
-npm dependencies to install. Run `npm test` in this directory. Tests import the actual Free
-configuration and exercise continuity, injection, import and storage boundaries.
-They do not establish mounted-browser compatibility or narrative compliance.
+npm dependencies to install. Run `npm test` in this directory. Tests import the
+actual public-build configuration and exercise continuity, injection, import,
+and storage boundaries. They do not establish mounted-browser compatibility or
+narrative compliance.
 
-The package includes shared continuity regression suites and Free-specific
-onboarding, restore, race and failed-write tests. Full-only rule-pack import
-tests are excluded; Free tests assert rejection instead. A legacy generic
-Archivist scheduler is included only as a test helper, not in the runtime graph.
+The package includes shared continuity regression suites and build-specific
+onboarding, restore, race, and failed-write tests. Rule-pack import tests for
+surfaces that are still in development are excluded; this build asserts
+rejection instead. A legacy generic Archivist scheduler is included only as a
+test helper, not in the runtime graph.
 
 For isolated manual Chrome testing, load the `extension` directory unpacked in
-a dedicated test profile. Do not run Full and Free on the same page.
+a dedicated test profile. Do not run multiple DGCE variants on the same page.
 
 ## Starting and restoring
 
-Free now separates Recall result (default 120 estimated tokens for selected
+This build separates Recall result (default 120 estimated tokens for selected
 cards) from Total continuity context (default 1200, enforcing 960 with headroom).
 The total covers surfaces, selected memory and the optional Chaos Deck seed.
 Old saves acquire the total setting without changing their recall allowance.
@@ -93,7 +96,8 @@ require their own exact action, request, parent, release and saved-text evidence
 Only CRLF/LF normalization is accepted for these plain packets. Completion neither
 grants history clearance nor acknowledges outcomes nor creates a carrier receipt.
 Legacy pending turns missing request parent/timing evidence remain manual recovery;
-the upgrade never fabricates missing facts. Full mechanical outcomes are excluded.
+the upgrade never fabricates missing facts. Mechanical outcomes that are still
+in development are not included here.
 This is one-record readback, not complete-history or model-consumption proof.
 Mounted verification of this adapter was later completed on the reviewed .146
 runtime; this publication-prep copy preserves that documented behavior without
@@ -110,11 +114,11 @@ blocks import. Failed/cancelled saves do not trigger cleanup. Pasted backup text
 survives redraw/cancellation but is not carried into another session.
 Replacement import restores the deck pool, anchors, mode, review queue and last
 draw. Additive import keeps the target deck unchanged; use replacement to restore
-a deck backup. Old Free saves with a null deck acquire an empty, disabled deck.
+a deck backup. Older saves with a null deck acquire an empty, disabled deck.
 Cards excluded by the context budget are not consumed. Deck edits/refills wait
 while an ordinary send is pending, preserving its exact rollback boundary.
 
-## Guide-workflow additions (also in Full/Pro)
+## Guide-workflow additions
 
 Unique full-name or alias mentions can bring retired confirmed memories into
 bounded recall without changing durable rank. Ambiguous names are not guessed.
@@ -140,10 +144,10 @@ model context. Library entries travel in ordinary backups, not sequel transfers.
 - Mounted Chrome/DreamGen verification was completed for the reviewed .146
   runtime, including same-document navigation/plain-turn checks and the
   supplemental mounted carrier regression pass.
-- Free preserves existing host/history fail-closed behavior. It does not bypass
+- This build preserves existing host/history fail-closed behavior. It does not bypass
   a missing history witness or treat visible prose as delivery proof.
 - Independent review and packaging review were supplied for the reviewed .146
-  candidate; this repository copy is the public Free publication-prep form.
+  candidate; this repository copy is the public publication-prep form.
 - Any separately packaged public zip or later public artifact that changes
   bytes must be identified by its own hash and release receipt.
 

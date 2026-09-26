@@ -1,12 +1,12 @@
 {
-  "edition": "free",
+  "edition": "public",
   "version": "0.7.146",
-  "audience": "public-free-repository",
+  "audience": "public-repository",
   "externalReleaseApproved": true,
-  "fullEditionCodeRemovalComplete": true,
+  "publicBuildScopePrepared": true,
   "mountedBrowserVerified": true,
   "notes": [
-    "Public Free repository candidate with MPL-2.0 licensing and reserved project marks.",
+    "Public repository candidate with MPL-2.0 licensing and reserved project marks.",
     "Mounted carrier regression pass was recorded for the reviewed .146 runtime before this publication-prep repackaging.",
     "Any separately packaged public zip should be identified by its own hash and release receipt."
   ],

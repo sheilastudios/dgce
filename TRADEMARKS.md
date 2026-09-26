@@ -9,7 +9,6 @@ icons, or other brand assets.
 The following identifiers and assets are reserved except for truthful,
 referential use:
 - **DGCE**
-- **DGCE Free**
 - Sheila Studios project branding, logos, and icons shipped with the project
 - release presentation that implies an official DGCE build from the main line
 
@@ -17,7 +16,7 @@ referential use:
 
 You may:
 - refer to this project by name when discussing it truthfully
-- state that your fork is based on or derived from DGCE Free
+- state that your fork is based on or derived from DGCE
 - redistribute unmodified official releases with their existing notices intact
 
 ## What is not allowed without permission

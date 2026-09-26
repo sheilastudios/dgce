@@ -259,7 +259,7 @@ test('queued metadata adoption never regresses revision, timestamp or writer pro
 test('artifact really selects Free, not a runtime setting or simulated switch', () => {
   assert.equal(edition.IS_FREE_EDITION, true);
   const ws = fresh(); ws.settings.edition = 'full';
-  assert.throws(() => edition.requireFullEdition('Campaign'), /DGCE Free/);
+  assert.throws(() => edition.requireFullEdition('Campaign'), /public DGCE build/);
   assert.equal(edition.editionWorkspaceIssue(ws), null);
 });
 
@@ -347,9 +347,9 @@ for (const [name, change] of Object.entries(fullChanges)) {
     const before = serialize(source), targetBefore = serialize(target);
     assert.ok(edition.editionWorkspaceIssue(source));
     const json = exportToJSON(source);
-    assert.throws(() => inspectImport(json), /DGCE Free cannot use/);
-    for (const mode of ['merge', 'replace']) assert.throws(() => importWorkspace(target, json, { mode }), /DGCE Free cannot use/);
-    assert.throws(() => buildInjectionBody(source), /DGCE Free cannot use/);
+    assert.throws(() => inspectImport(json), /public DGCE build cannot use/);
+    for (const mode of ['merge', 'replace']) assert.throws(() => importWorkspace(target, json, { mode }), /public DGCE build cannot use/);
+    assert.throws(() => buildInjectionBody(source), /public DGCE build cannot use/);
     assert.equal(serialize(source), before);
     assert.equal(serialize(target), targetBefore);
     assert.equal(JSON.parse(json).workspace.workspace_id, source.workspace_id, 'export remains available');
@@ -362,7 +362,7 @@ test('Full implementations are absent and commands reject before mutation', () =
     assert.equal(existsSync(new URL(`../extension/core/${name}.js`, import.meta.url)), false, name);
   }
   for (const text of ['/check INT', '/attack kit', '/initiative', '/campaign accept', '/skills', '/level up']) {
-    assert.throws(() => edition.assertEditionCommand(text), /not available in DGCE Free/);
+    assert.throws(() => edition.assertEditionCommand(text), /not available in this public DGCE build/);
   }
   assert.doesNotThrow(() => edition.assertEditionCommand('I inspect the lantern.'));
   assert.equal(serialize(ws), before);
@@ -379,11 +379,11 @@ test('storage fences protect existing Full data and reject newly activated Full 
     const full = fresh(); change(full);
     const h = memoryStore(full), before = h.values.get(h.store.key);
     assert.equal(serialize(await h.store.read()), before, 'Full data must remain unhydrated for export');
-    await assert.rejects(h.store.write(0, () => assert.fail('mutator must not run')), /DGCE Free cannot use/);
+    await assert.rejects(h.store.write(0, () => assert.fail('mutator must not run')), /public DGCE build cannot use/);
     assert.equal(h.values.get(h.store.key), before);
   }
   const clean = memoryStore(fresh()), cleanBefore = clean.values.get(clean.store.key);
-  await assert.rejects(clean.store.write(0, ws => { fullChanges.campaign(ws); return ws; }), /DGCE Free cannot use/);
+  await assert.rejects(clean.store.write(0, ws => { fullChanges.campaign(ws); return ws; }), /public DGCE build cannot use/);
   assert.equal(clean.values.get(clean.store.key), cleanBefore);
   const saved = await clean.store.write(0, ws => { ws.surfaces.event_log.text = 'Safe continuity edit'; return ws; });
   assert.equal(saved.surfaces.event_log.text, 'Safe continuity edit');
@@ -433,7 +433,7 @@ test('Free admission ignores model campaign proposals and only confirms continui
   });
   admission('A normal player action.', ws);
   assert.equal(serialize(ws), before);
-  assert.throws(() => admission('/campaign accept', ws), /DGCE Free/);
+  assert.throws(() => admission('/campaign accept', ws), /public DGCE build/);
 });
 
 test('Free UI retains only static preview tabs, not Full controls', () => {
@@ -445,7 +445,7 @@ test('Free UI retains only static preview tabs, not Full controls', () => {
   const data = runInNewContext(`${extract('dataTab')}\ndataTab`, context)();
   const preview = runInNewContext(`${extract('previewTab')}\npreviewTab`, context)('Campaign');
   const text = JSON.stringify([nav, header, data, preview]);
-  assert.match(text, /Continuity Free/);
+  assert.match(text, /Continuity/);
   assert.match(text, /Copy export JSON/);
   assert.match(text, /Load continuity backup JSON/);
   assert.match(text, /Campaign.*In development/);

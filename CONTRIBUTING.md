@@ -1,14 +1,14 @@
-# Contributing to DGCE Free
+# Contributing to DGCE
 
-Thanks for helping improve DGCE Free.
+Thanks for helping improve DGCE.
 
 ## Scope
 
-This repository is for the **Free** edition only: continuity tools, recall,
+This repository is for the current **public build**: continuity tools, recall,
 backup/import, delivery/readback behavior, and Chaos Deck support.
 
 Please do not submit:
-- proprietary or paid-edition code
+- unreleased in-development code that is outside the scope of this public build
 - private keys, secrets, or captured user data
 - DreamGen source code or other third-party proprietary material
 - branding changes that would blur the distinction between community forks and
@@ -23,8 +23,8 @@ it and that you are licensing your contribution under the terms of the
 In short:
 - files in this repository are MPL-2.0-covered source files
 - changes to those files stay under MPL-2.0 when distributed
-- separate proprietary or paid editions should remain separate larger works or
-  separate modules, rather than mixing closed changes into MPL-covered files
+- separate larger works or separately distributed in-development modules should
+  remain separate, rather than mixing closed changes into MPL-covered files
 
 If you want to discuss a contribution that does not fit those terms, open an
 issue before doing the work.

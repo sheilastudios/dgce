@@ -1,6 +1,6 @@
-18bc1a015ce1f587700e6bac2b77b716c77e0d0a31a875f9a23de0a343c72081  ./BUILD-STATUS.json
+bede514396763cf0ff18df481d0c56ed886cbda0944f9747342b84c6600d3d84  ./BUILD-STATUS.json
 8acb2549158a990cae7a48117bd22f2df654ec2c80c38ec0d20fd74cbdb6e6aa  ./CONTINUITY-WORKFLOWS.md
-ca30d258af04b455893cfc973779a212353c42eaf7ef63347e0cd9a9e54a4b93  ./CONTRIBUTING.md
+b5f27fa1e158b717fd2f97cefc039821988def9c9e0a5adee80c1dae20e19301  ./CONTRIBUTING.md
 4fee795e31d379ac872931bd4399d95c6655a44c7bc6b12a0dbda61ae1673c57  ./extension/background.js
 f40ba55cbbe60484a2d44e44a7283800529a64549447ee5088d3a85db3ab6288  ./extension/content.js
 1ffb97c87de39bdeff33fe7bc467c937539aa6114731076ce48a1dd4c2aeda0a  ./extension/core/aliases.js
@@ -19,7 +19,7 @@ f9d6cca17462987a1d67e5a7c58d31a6c67d35701ed1e27459f05fa80e498741  ./extension/co
 92c4a9658ae7607b4514cec67e59c564ea7684cac3cd8cce26a596531915dfbf  ./extension/core/continuity-transfer.js
 725d546bc8a6a84453c83bafa03b5aee2a4b12961934e2881d21c3a419c6dab2  ./extension/core/deck.js
 98c0d9b99649028e36fe57da5ee66371ea415cca66e3daf17da938a6370ee643  ./extension/core/edition-config.js
-44eb92b24d94ce228e38d6fb7856c6ce07fa7cc4325986e5e24dff134280bc84  ./extension/core/edition.js
+e6a2deb347d122d1130d9eaf3f397c5cb97e889567eaaa7430e88425b2a25c1d  ./extension/core/edition.js
 5883b37090aa8346985a59e85fb79ea96dee764a8d07bb66494d03a01fff44eb  ./extension/core/entity-authority.js
 c0beb67e46428b1cf44828a202adc54e4540aea0d3cc2ed5da89a5970b829ff4  ./extension/core/freshness.js
 22b1dbca746f0451b3d2e4667c3cfef8564f79f5c0d3ee47fdca7fc8e917139e  ./extension/core/host-packet-equivalence.js
@@ -61,17 +61,17 @@ bafb9a94a1b09de60777e372bfdc64dcbf99346b6d9fe0e6591c8f42a2b1a611  ./extension/ho
 534d8eba23abf9ff084a16b28f3b25e248bf7d7ea6ebaa3c67a8e3cf1db04b79  ./extension/host/scenario.js
 c8a10898587318e347ca2733805e43a2f35c86b870e8decc56e7a5c81f6d75de  ./extension/host/session-readback.js
 db4f1fe235a42def5430141e9795f81f496ef9566937dd316a84397bcee2fcee  ./extension/host/turn-persistence.js
-95a92a0098cc2895c619554921419e85d1a25bc1d33a69464027357b28e99f02  ./extension/manifest.json
+4208dd288ac22c7ca81a8c662928afc4fbccc5fd5733949b16d834e5467f6c60  ./extension/manifest.json
 285d6c9b82c81fb16793f14415e28a774daa9bbe98c0d93734b795e7ac84604b  ./extension/storage.js
-543cc5f79a9d4969de17beb75603beea27c475f716707010c0a6164609c71bc4  ./extension/ui/continuity-tools.js
+042ea23350c8f906c788e013c6e5ead317226fae02f6870a2d937a5dcc3140e8  ./extension/ui/continuity-tools.js
 0d7c0c8abde19ec14fbd1892c021ae9108ebdab4364c5487488aba17b8d90af2  ./extension/ui/light-dismiss.js
-682d386b5bd5ab2e87e16388db1b72cb84dfe19aff63cf897236ad00445814e8  ./extension/ui/panel.js
+0f3d9cfde896814e92968a1b6324157403b6a437fbe21d8d702a7ffe3f4a9c84  ./extension/ui/panel.js
 a523cff8ed0eb29c6e4bc5ade363cc73d86c687d2a2ea5421b90d3b9228b2cb4  ./extension/ui/styles.js
 bbd01e23a58b42f0866346a4a5dcf151f80c50e19ef4681621b95f8668753746  ./extension/ui/surface-drafts.js
 eac019916cce4c6a1cf8c29e84597f13114605fc1c80bafd489139b53c20f9ff  ./.gitignore
 74cd07074c3caa000900e1e22607268865ed64a66b98c3b2a34b0b6b8e020b1a  ./LICENSE
 886082e3b9b2bfcecddf81fc9365022fdb3e9e96ba2749a9130aba05ad188f6d  ./package.json
-532dd968662d752b311f3c042edbef8600a19d0510b82e8c6b87224f053719d2  ./README.md
+439d91460c40d3db6acc65ebba4b73a9ac13e77723dc5f65dfad264d636f32b4  ./README.md
 a931ef0f644cb0dd0515b3bc1d0a2f01c77f9b686ebe1ecee2ed322c0dfd5edb  ./test/apply.test.js
 aa5503b36f3e4270870420f66d1c5953deb14e5ce1d1124ab9934501db62f6b9  ./test/archivist-budget-adapters.test.js
 9b9b69a24e1d3c89b4e4a7630ce59fadbd5df4732d8c8800c2cee4ffb7ce33db  ./test/archivist-budget-repair.test.js
@@ -87,7 +87,7 @@ f9d485bb3dca10878dd300ca09628be4eccb59b0504aabf7b3882bc6c6156c2f  ./test/assista
 6b4992ab3f77be12ebd6125d3fd2d86e5ee669925c6782a3120a64d205efcbe0  ./test/continuity-features.test.js
 c6821d9a1a217427376e42c20fe02989669e89c02f39894d2f13fd23486a8ee6  ./test/deck.test.js
 4ff5062491fa80a21814c6ae6e8ca76f8a460f74400b358b629009194acfe71e  ./test/free-deck.test.js
-c8d1088e1b2af7906294273d400c583157129261788b76d8c8317a1af290d421  ./test/free-runtime.test.js
+7ed78ee8d7b1816803709d9c8428b658584a3493b86e7c62051d94aa10f978cc  ./test/free-runtime.test.js
 659b35502738f6abd5660b54dc8c91ad3054aebf882df080de702ea248b9d630  ./test/free-ui.test.js
 f72510c5adeb059f3e14c7677a1f55c7eef3ddef6d88540fa921198590fb0c11  ./test/helpers/archivist-runner.js
 f26ecaf39e1ed009c8e81248a83eeb3be2e90caa65cc068172fdebb59dfcc066  ./test/helpers/history-surface.js
@@ -103,4 +103,4 @@ fc2abe014a999ee9d9a2ab4e9c1eb67fb8f9467077cf6637a9ab20209e289955  ./test/origina
 6c474d7b906f7ee93ccebba0cd734c7a282020326d85393c3a21d428eea5d2a9  ./test/session-readback.test.js
 75a136ef9e6588dfe78d41ca717398e3d78beba62b0d7325a9c99aa23c786c63  ./test/surface-budget.test.js
 56f5163f983fe6f32277cde07bd5ed303ffb63aad56bfea5ebfed1467294ede7  ./test/turn-persistence.test.js
-3cdb5af95bebc6c8992b54378fbd560495f26164f25f22770297265ad91f9caa  ./TRADEMARKS.md
+3e0d82c6522a82e7c80d7d42f2b7852bdfd1050b3e3da9c50859232fbdfd06b0  ./TRADEMARKS.md

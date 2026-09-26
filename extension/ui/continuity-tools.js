@@ -60,5 +60,5 @@ export function continuityTools({ el, ws, draft, mutate, notify, render, readAut
       button('Download block JSON', () => download('dgce-authored-block.json', JSON.stringify(exportAuthoredBlock(entry), null, 2))),
       button('Edit as a new reviewed version', () => { draft.block = JSON.stringify(exportAuthoredBlock(entry), null, 2); delete draft.blockReview; render(); }),
       button('Copy revision-review prompt for Assistant', () => copy(authoredRevisionPrompt(entry, draft.changes ?? ''))))),
-    el('p', {}, 'Library versions remain separate from remembered events. Full library data is included in ordinary backups; individual JSON blocks can be reviewed/imported in either edition. Host speaker/portrait repairs and native sequel creation remain DreamGen controls.'));
+    el('p', {}, 'Library versions remain separate from remembered events. Complete local library data is included in ordinary backups; individual JSON blocks can be reviewed/imported in compatible DGCE builds. Host speaker/portrait repairs and native sequel creation remain DreamGen controls.'));
 }
