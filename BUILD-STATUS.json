@@ -6,8 +6,8 @@
   "publicBuildScopePrepared": true,
   "mountedBrowserVerified": true,
   "notes": [
-    "Public repository candidate with MPL-2.0 licensing and reserved project marks.",
-    "Mounted carrier regression pass was recorded for the reviewed .146 runtime before this publication-prep repackaging.",
+    "Public repository release with MPL-2.0 licensing and reserved project marks.",
+    "Mounted carrier regression pass was recorded for the reviewed .146 runtime before this public release packaging.",
     "Any separately packaged public zip should be identified by its own hash and release receipt."
   ],
   "extensionFiles": [

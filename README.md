@@ -125,7 +125,7 @@ the upgrade never fabricates missing facts. Mechanical outcomes that are still
 in development are not included here.
 This is one-record readback, not complete-history or model-consumption proof.
 Mounted verification of this adapter was later completed on the reviewed .146
-runtime; this publication-prep copy preserves that documented behavior without
+runtime; this released copy preserves that documented behavior without
 claiming that a byte-changed future artifact has already inherited the same
 exact release receipt.
 
@@ -172,11 +172,11 @@ model context. Library entries travel in ordinary backups, not sequel transfers.
 - This build preserves existing host/history fail-closed behavior. It does not bypass
   a missing history witness or treat visible prose as delivery proof.
 - Independent review and packaging review were supplied for the reviewed .146
-  candidate; this repository copy is the public publication-prep form.
+  release; this repository copy is the public released form.
 - Any separately packaged public zip or later public artifact that changes
   bytes must be identified by its own hash and release receipt.
 
 No billing, license service, private runtime, or payment integration is added.
 
-`BUILD-STATUS.json` records candidate scope and publication-prep status.
+`BUILD-STATUS.json` records public release scope and status.
 `SHA256SUMS.txt` records every packaged file except the hash list itself.
