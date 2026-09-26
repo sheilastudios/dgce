@@ -41,6 +41,16 @@ not granted under that license. See `LICENSE`, `CONTRIBUTING.md`, and
 Use a dedicated browser profile for testing if you want a clean lane. Do not
 run multiple DGCE variants on the same page.
 
+## Try the Quantum Enchantments demo
+
+**[The Waykey — setup guide](demos/quantum-enchantments/README.md)** gives you
+a self-contained comic fantasy adventure you can play immediately, with or
+without DGCE. It includes paste-ready DreamGen scenario fields and a concrete
+schema/example package you can inspect when building your own scenarios by
+hand.
+
+The same demo is also attached to the GitHub release assets as a standalone ZIP.
+
 ## Included
 
 Local Event Log, Social Context and optional inventory memory; People, Places

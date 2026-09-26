@@ -1,0 +1,76 @@
+{
+  "schema_version": 1,
+  "package": "QE-The-Waykey-public-demo-r1",
+  "date": "2026-09-26",
+  "scope": "Demo only; no extension runtime or replacement repository metadata.",
+  "source": "QE_The_Waykey_SCENARIO_v1.md, 2026-09-23",
+  "new_live_playtest": false,
+  "exclusion": "Manifest excludes itself; ZIP hash binds the full artifact.",
+  "files": [
+    {
+      "path": "DEMO-STATUS.md",
+      "bytes": 3225,
+      "sha256": "bab3a41f86c4d2f3f2c98031da54ee19cea1e2b7cce5335269540e9a6d877c16"
+    },
+    {
+      "path": "README.md",
+      "bytes": 7573,
+      "sha256": "6b8d256a6f19743b3cfed590386373448aef5fef2cedc76d201f71117ffdc08e"
+    },
+    {
+      "path": "SCENARIO.md",
+      "bytes": 8845,
+      "sha256": "3be932295cadaadeda5b8e2d02dfbcd9f1117d502ff00b84996d8022ce139875"
+    },
+    {
+      "path": "fields/01-title.txt",
+      "bytes": 33,
+      "sha256": "8334367f8de1e678afa7ee1d295032b3a0fdcf10f388e7a0da02b46f587766df"
+    },
+    {
+      "path": "fields/02-brief-description.txt",
+      "bytes": 71,
+      "sha256": "f9ee8a0801bcfa2fdf7d67d7557ce056083c16abf9f7e496635caae02ded2dee"
+    },
+    {
+      "path": "fields/03-public-description.txt",
+      "bytes": 695,
+      "sha256": "7238a778451033f83029aef3f4b62452e1621d49711912db8cbaae03e6d236c1"
+    },
+    {
+      "path": "fields/04-setting.txt",
+      "bytes": 1122,
+      "sha256": "718dcdf642aa744587bf065a222fedca0446a0d73c2e1c4d0daebb571dd22de5"
+    },
+    {
+      "path": "fields/05-player-description.txt",
+      "bytes": 378,
+      "sha256": "a592d4d983f099e55185bf1d03412d4b692855313b39cb88ef3112b5557ed32a"
+    },
+    {
+      "path": "fields/06-hazelnut.txt",
+      "bytes": 852,
+      "sha256": "270ffdb391319d5ef09bfbc75fb94ba42e41f5d6663fe0b45af498ae7cf95d3b"
+    },
+    {
+      "path": "fields/07-plot.txt",
+      "bytes": 4406,
+      "sha256": "30de71c959dbe0d25e938e4c67df26e67296ee426ef28b642acf1cc2f1a7f5d4"
+    },
+    {
+      "path": "fields/08-opening-description.txt",
+      "bytes": 20,
+      "sha256": "1765cc3522b5be820b93ea4ec692d73034bb9833d3f7159d7d832d7936c43c09"
+    },
+    {
+      "path": "fields/09-opening-narrative.txt",
+      "bytes": 1078,
+      "sha256": "08d57cc9ed3840b39c0a402393d2cb03f108ffe12d3245394820302cfbf88b0c"
+    },
+    {
+      "path": "verify-demo.mjs",
+      "bytes": 2771,
+      "sha256": "74a8b773a06ba5237de1b3b2d23d57778ec60964efd2605f1eb10bb103f0b01f"
+    }
+  ]
+}
