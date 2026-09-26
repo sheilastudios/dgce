@@ -4,6 +4,9 @@ Public demo revision 1, September 26, 2026. No campaign builder, mechanical rule
 
 You can play this scenario with DreamGen alone. If you also want continuity tracking or optional Chaos Deck support, install DGCE first using the main repository instructions, then come back here.
 
+Rights for the story/demo text in this directory are separate from the DGCE
+software license. See `RIGHTS.md`.
+
 ## 1. Create the native DreamGen scenario
 
 In DreamGen, open **Your Scenarios** and create a new roleplay scenario. Keep it private while setting it up. Use a fresh scenario rather than overwriting another game.
@@ -69,5 +72,8 @@ For a simple manual suggestion, you could use: “If it fits the current scene, 
 ## Sharing and scope
 
 The public demo intentionally omits unrevealed novel background. Its local adventure can end through rescue, return, compromise or refusal. No proprietary runtime notation, advanced game engine or contest hashtag is bundled. Do not represent the historical contest token count as a measurement of this edited public demo; check the editor again if making a separate contest entry.
+
+This directory's creative/demo content is not covered by DGCE's MPL-2.0
+software license unless explicitly stated otherwise. See `RIGHTS.md`.
 
 Source setup reference: [DreamGen scenario editor](https://v2.dreamgen.com/docs/scenario-editor), checked September 26, 2026. This package uses manual field entry, not an invented native JSON import.

@@ -9,13 +9,18 @@
   "files": [
     {
       "path": "DEMO-STATUS.md",
-      "bytes": 3225,
-      "sha256": "bab3a41f86c4d2f3f2c98031da54ee19cea1e2b7cce5335269540e9a6d877c16"
+      "bytes": 3415,
+      "sha256": "4b484b640ea5157a93f0f09b154fbf703a2cd92179854e213f88fd90b1462982"
     },
     {
       "path": "README.md",
-      "bytes": 7573,
-      "sha256": "6b8d256a6f19743b3cfed590386373448aef5fef2cedc76d201f71117ffdc08e"
+      "bytes": 7828,
+      "sha256": "5eb9c601149c45f3e62f01b19094650f58b09cd6dbce36ba31f1fb1253e53bed"
+    },
+    {
+      "path": "RIGHTS.md",
+      "bytes": 1236,
+      "sha256": "e77361c28a1d83e8e2a9c699941ca8da6f0311e710d1003ffa123fd069792606"
     },
     {
       "path": "SCENARIO.md",

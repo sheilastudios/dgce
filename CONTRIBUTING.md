@@ -11,18 +11,26 @@ Please do not submit:
 - unreleased in-development code that is outside the scope of this public build
 - private keys, secrets, or captured user data
 - DreamGen source code or other third-party proprietary material
+- story/demo text or creative assets whose rights are unclear or whose reuse
+  terms would conflict with the directory-level notices in this repository
 - branding changes that would blur the distinction between community forks and
   the main DGCE release line
 
 ## License for contributions
 
 By submitting a contribution, you represent that you have the right to submit
-it and that you are licensing your contribution under the terms of the
-**Mozilla Public License 2.0** for inclusion in this repository.
+it and, unless a file or directory states separate terms, that you are
+licensing your contribution under the terms of the **Mozilla Public License
+2.0** for inclusion in this repository.
 
 In short:
-- files in this repository are MPL-2.0-covered source files
+- software/source files in this repository are MPL-2.0-covered unless a file
+  or directory says otherwise
 - changes to those files stay under MPL-2.0 when distributed
+- the Quantum Enchantments demo/story directory at
+  `demos/quantum-enchantments/` carries its own rights notice in `RIGHTS.md`;
+  do not assume that creative-text contributions there are accepted under MPL
+  without explicit coordination
 - separate larger works or separately distributed in-development modules should
   remain separate, rather than mixing closed changes into MPL-covered files
 

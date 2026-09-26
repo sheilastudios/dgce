@@ -13,7 +13,9 @@ handling after host navigation. No new permissions were added.
 DGCE is an unofficial community extension. It is not affiliated with or
 endorsed by DreamGen. The source code in this repository is licensed under the
 Mozilla Public License 2.0. Project names, logos, and other brand assets are
-not granted under that license. See `LICENSE`, `CONTRIBUTING.md`, and
+not granted under that license. The Quantum Enchantments demo/story content
+under `demos/quantum-enchantments/` is licensed separately; see that
+directory's `RIGHTS.md`. See `LICENSE`, `CONTRIBUTING.md`, and
 `TRADEMARKS.md`.
 
 ## What this does for your game
@@ -47,7 +49,8 @@ run multiple DGCE variants on the same page.
 a self-contained comic fantasy adventure you can play immediately, with or
 without DGCE. It includes paste-ready DreamGen scenario fields and a concrete
 schema/example package you can inspect when building your own scenarios by
-hand.
+hand. The story/demo text in that directory has its own separate rights note;
+see `demos/quantum-enchantments/RIGHTS.md`.
 
 The same demo is also attached to the GitHub release assets as a standalone ZIP.
 
@@ -66,6 +69,10 @@ DreamGen still provides the model and conversation. This is not a transcript bac
 
 The source code in this repository is licensed under the Mozilla Public
 License, v. 2.0. This repository contains the current public build.
+
+The Quantum Enchantments demo content under `demos/quantum-enchantments/` is
+not licensed under MPL-2.0 unless that directory explicitly says otherwise.
+See `demos/quantum-enchantments/RIGHTS.md`.
 
 If future builds, experimental branches, or larger works are distributed
 separately, changes to files in this repository remain governed by MPL-2.0.

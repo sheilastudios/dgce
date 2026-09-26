@@ -33,4 +33,8 @@ Key-first defection, impossible destinations, genuine companion disagreement, co
 
 This is a demo-only add-on. It contains no extension runtime, root repository README, build-status file or software license replacement. The setup was checked against the public DGCE source at commit `0b6daae6de284af3c2387447b2f6597ff080502b`; Sheila's separately repackaged extension remains authoritative. This packaging does not assign the story a new license or apply the extension's software license to it.
 
+When this demo is distributed inside the public DGCE repository, keep an
+explicit separate rights notice with it so the creative/demo text is not
+mistaken for MPL-covered software content.
+
 No public repository, remote scenario, installed extension or live campaign was modified. No API/model calls were purchased or performed.
