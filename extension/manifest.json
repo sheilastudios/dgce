@@ -1,0 +1,43 @@
+{
+  "manifest_version": 3,
+  "name": "DGCE Free",
+  "version": "0.7.146",
+  "minimum_chrome_version": "106",
+  "description": "Unofficial continuity and Chaos Deck companion for DreamGen sessions.",
+  "permissions": [
+    "storage",
+    "webRequest"
+  ],
+  "host_permissions": [
+    "https://v2.dreamgen.com/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://v2.dreamgen.com/*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "ui/*.js",
+        "core/*.js",
+        "host/*.js",
+        "storage.js"
+      ],
+      "matches": [
+        "https://v2.dreamgen.com/*"
+      ]
+    }
+  ],
+  "version_name": "0.7.146 Free"
+}

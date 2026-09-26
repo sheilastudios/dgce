@@ -1,0 +1,14 @@
+# OS/editor noise
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# Logs and local test output
+*.log
+coverage/
+.nyc_output/
+
+# Local packaging artifacts
+*.zip
