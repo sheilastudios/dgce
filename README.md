@@ -16,6 +16,30 @@ Mozilla Public License 2.0. Project names, logos, and other brand assets are
 not granted under that license. See `LICENSE`, `CONTRIBUTING.md`, and
 `TRADEMARKS.md`.
 
+## What this does for your game
+
+- Keeps local continuity notes for people, places, events, objects, social
+  context, and optional inventory memory.
+- Lets you selectively recall the right continuity back into the current scene
+  instead of dumping everything at once.
+- Gives you backup/import tools and sequel handoff support for carrying local
+  continuity into later sessions.
+- Adds an optional Chaos Deck for nudges, anchors, and reviewed Assistant
+  proposals without pretending those draws are resolved game outcomes.
+- Preserves delivery/recovery discipline so saved-turn evidence is clearer when
+  DreamGen or the browser does something ambiguous.
+
+## Install
+
+1. Download or clone this repository.
+2. In Chrome, open `chrome://extensions`.
+3. Turn on **Developer mode**.
+4. Choose **Load unpacked** and select the `extension/` directory from this repo.
+5. Open a supported DreamGen session at `https://v2.dreamgen.com/`.
+
+Use a dedicated browser profile for testing if you want a clean lane. Do not
+run multiple DGCE variants on the same page.
+
 ## Included
 
 Local Event Log, Social Context and optional inventory memory; People, Places
@@ -76,8 +100,8 @@ surfaces that are still in development are excluded; this build asserts
 rejection instead. A legacy generic Archivist scheduler is included only as a
 test helper, not in the runtime graph.
 
-For isolated manual Chrome testing, load the `extension` directory unpacked in
-a dedicated test profile. Do not run multiple DGCE variants on the same page.
+For isolated manual verification beyond normal use, load the `extension`
+directory unpacked in a dedicated test profile.
 
 ## Starting and restoring
 
