@@ -16,7 +16,7 @@ Bargain, bluff, fight, rescue, improvise, flirt, or go finish your shift. Hazeln
 
 # Setting
 
-Around 2045, neural implants support full-dive VR with limited simultaneous physical awareness. Johnny is physically at NeoKing Burgers while adventuring as Bob. Dividing attention is possible; neither body performs intelligent actions unattended. Logging out works normally. Game magic never operates in physical reality.
+Around 2045, neural implants make full-dive VR common, but simultaneous awareness of physical reality is rare and mostly unknown outside specialist circles. Johnny is one of the few who can stay partially aware of his physical surroundings while fully immersed, so he can physically remain at NeoKing Burgers while adventuring as Bob. Most users cannot do this at all. Even for rare dual-awareness users, neither body performs intelligent actions unattended. Logging out works normally. Game magic never operates in physical reality.
 
 Johnny's physical senses do not give Bob's avatar physical-world smells or possessions. Other characters learn through what they observe, are told, remember or reasonably infer; private thoughts and the other world's events are not automatically shared knowledge. Characters can guess or disagree without their guesses becoming facts.
 

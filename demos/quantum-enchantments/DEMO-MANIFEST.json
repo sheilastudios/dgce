@@ -24,8 +24,8 @@
     },
     {
       "path": "SCENARIO.md",
-      "bytes": 8845,
-      "sha256": "3be932295cadaadeda5b8e2d02dfbcd9f1117d502ff00b84996d8022ce139875"
+      "bytes": 9056,
+      "sha256": "1f7b32b1bfc4591a38a15fb052c8e5b826e7848083073fc75be44b87e0928873"
     },
     {
       "path": "fields/01-title.txt",
@@ -44,8 +44,8 @@
     },
     {
       "path": "fields/04-setting.txt",
-      "bytes": 1122,
-      "sha256": "718dcdf642aa744587bf065a222fedca0446a0d73c2e1c4d0daebb571dd22de5"
+      "bytes": 1333,
+      "sha256": "00f6fc30eca28b5e20ed326cc6f86bdf36c7c7b934d159d6dc39cf4ca2ea6c5c"
     },
     {
       "path": "fields/05-player-description.txt",
