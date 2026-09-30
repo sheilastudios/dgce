@@ -1,0 +1,20 @@
+{
+  "version": "0.7.163",
+  "sourceCommit": "0a4c21cd0da7d53ef95baf9cacc5983652445b1e",
+  "sourceCommitShort": "0a4c21c",
+  "zip": "DGCE_0.7.163_with_QE_demo_beta_2026-09-30.zip",
+  "sha256": "fef6078e5cb5a08af859b41e817c5bc82676a52fa9817422dfdd8b2fbd1f1353",
+  "bytes": 410191,
+  "packageRoot": "dgce/",
+  "inventoryFiles": 145,
+  "hashesVerified": 144,
+  "extensionTests": { "pass": 714, "fail": 0 },
+  "demoTests": { "pass": 12, "fail": 0 },
+  "livePlaytestScope": "focused-private-clone-not-end-to-end",
+  "stableReleaseApproved": false,
+  "notes": [
+    "Packaged from current repo state after merging the 0.7.163 beta handoff.",
+    "Preserves the newer Hazelnut guidance carried forward during Sheila merge/review.",
+    "Fresh zip/extract verification rerun completed successfully."
+  ]
+}
