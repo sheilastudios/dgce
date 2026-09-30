@@ -6,6 +6,8 @@
 // and never fabricates a host request. Cleanup is exact-count bounded and stops
 // if one delete changes anything other than the selected interaction.
 
+import { compareHostPackets } from '../core/host-packet-equivalence.js';
+
 // Responsive duplicates can have a non-null offsetParent but no rendered box.
 // Prefer actual layout evidence; the fallback supports non-DOM test adapters.
 const visible = (node) => Boolean(node && (typeof node.getClientRects === 'function'
@@ -185,21 +187,30 @@ function generatedBatch(doc, roots, start, anchor) {
 
 // This is a representation-continuity lease, never interaction identity or a
 // delivery receipt. Called only by the isolated final native-release hook.
-export function armHistoryLocalSend(doc, { id, visibleText } = {}) {
+export function armHistoryLocalSend(doc, { id, visibleText, carrierText = null } = {}) {
   const witness = historyWitnesses.get(doc);
   if (!id || typeof visibleText !== 'string' || !visibleText.trim() || !witness
-      || witness.send || witness.edit || witness.ownedEdit || !hasHistoryCompletenessWitness(doc)) return false;
+      || witness.send || witness.edit || witness.ownedEdit || !hasHistoryCompletenessWitness(doc)) {
+    recordHistoryDiagnostic(doc, { reason: 'local_send_not_armed', witness_present: Boolean(witness),
+      prior_send: Boolean(witness?.send), readonly_edit: Boolean(witness?.edit), owned_edit: Boolean(witness?.ownedEdit) });
+    return false;
+  }
   const composers = [...doc.querySelectorAll('textarea[aria-label^="Message as "], [contenteditable][aria-label^="Message as "], textarea[aria-label="Instruction"], [contenteditable][aria-label="Instruction"], textarea[aria-label="Narrative"], [contenteditable][aria-label="Narrative"]')].filter(visible);
-  if (composers.length !== 1) return false;
+  if (composers.length !== 1) {
+    recordHistoryDiagnostic(doc, { reason: 'local_send_composer_count', count: composers.length }); return false;
+  }
   const label = composers[0].getAttribute?.('aria-label');
   // The mounted Instruction row has a mode header, not a character identity.
   // Narrative submission is still outside this release/anchor adapter.
   const mode = label === 'Instruction' ? 'instruction' : label?.startsWith('Message as ') ? 'message' : null;
   const actor = mode === 'instruction' ? '(instructions)' : mode === 'message' ? label.slice('Message as '.length) : null;
-  if (!actor) return false;
+  if (!actor) { recordHistoryDiagnostic(doc, { reason: 'local_send_mode_unsupported' }); return false; }
   witness.send = { id, visibleText: visibleText.replace(/\r\n/g, '\n').trim(), actor, mode,
+    carrierText: typeof carrierText === 'string' ? carrierText : null,
     count: witness.roots.length, expires: clock() + 120_000,
     priorBatch: witness.replyBatch ? { ...witness.replyBatch } : null };
+  recordHistoryDiagnostic(doc, { reason: 'local_send_armed', count: witness.roots.length,
+    prior_batch: Boolean(witness.replyBatch), carrier_bound: Boolean(witness.send.carrierText) });
   return true;
 }
 
@@ -231,19 +242,128 @@ export function attestEmptySessionHistory(doc, expectedRoute) {
   return true;
 }
 
-function newSendAnchor(witness, roots) {
+// Load all can finish while the last settled response still occupies OUTPUT.
+// Retain that exact, bounded representation so a subsequent locally bound send
+// can recognize its OUTPUT -> stored-row transition. This grants no delivery
+// identity and creates no completeness evidence independently of Load all.
+function loadedTerminalBatch(doc, roots) {
+  const start = roots.findIndex(root => root.closest?.('div.OUTPUT'));
+  if (start < 1) return null;
+  return generatedBatch(doc, roots, start, roots[start - 1]);
+}
+
+// A separate user-attested origin for new sessions prefilled by a scenario.
+// Never infer completeness from a button-free page or from these texts alone.
+export function captureOpeningSessionHistory(doc, expectedRoute) {
+  if (doc?.location?.pathname !== expectedRoute || !supportedHistoryHost(doc)
+      || doc.querySelectorAll(editorSelector).length
+      || [...doc.querySelectorAll('button')].some(button => visible(button)
+        && (button.innerText || button.textContent || '').trim() === 'Load all')) return null;
+  const roots = loadedInteractionRoots(doc), texts = roots.map(rootText);
+  if (!roots.length || texts.some(text => !text.trim() || /ext_ctx|dgce-|campaignContext/i.test(text))) return null;
+  return { route: expectedRoute, roots, texts };
+}
+
+export function openingSessionHistoryMatches(doc, snapshot) {
+  if (!snapshot) return false;
+  const current = captureOpeningSessionHistory(doc, snapshot.route);
+  return Boolean(current && exactSnapshot(snapshot, current.roots));
+}
+
+export function attestOpeningSessionHistory(doc, snapshot) {
+  if (!openingSessionHistoryMatches(doc, snapshot)) return false;
+  historyWitnesses.set(doc, { route: snapshot.route, roots: [...snapshot.roots],
+    texts: [...snapshot.texts], scope: 'user_attested_scenario_opening' });
+  watchReadOnlyHistoryEdits(doc);
+  return true;
+}
+
+// Display continuity only, NEVER raw-packet equivalence or delivery evidence.
+// DreamGen renders dialogue delimiters as curly quotes in span.quote. Match
+// only those DOM-proven edges for a locally armed send. Unknown rich markup
+// stays unsupported; historical rows still require exact text and identity.
+export function matchesLocalSendDisplay(prose, expected, carrierText = null) {
+  if (typeof prose?.innerText !== 'string' || typeof expected !== 'string') return false;
+  const normalize = text => text.replace(/\r\n/g, '\n').trim();
+  const actual = normalize(prose.innerText);
+  if (actual === expected) return true;
+  // Markdown puts whitespace-only text nodes between block paragraphs. These
+  // are not story whitespace within paragraphs and must not be concatenated.
+  const paragraphs = Array.from(prose.childNodes ?? []).filter(node =>
+    !(node.nodeType === 3 && /^[\r\n\t ]*$/.test(node.textContent)));
+  if (!paragraphs.length) return false;
+  let rendered = '';
+  let visibleCount = 0;
+  const concealed = [];
+  const edges = new Set();
+  for (const paragraph of paragraphs) {
+    if (paragraph.nodeType !== 1 || paragraph.tagName !== 'P') return false;
+    if (paragraph.getAttribute?.('data-dgce-concealed') === '1' && paragraph.style?.display === 'none') {
+      concealed.push(paragraph.textContent); continue;
+    }
+    if (concealed.length) return false; // only the captured trailing carrier
+    if (visibleCount++) rendered += '\n\n';
+    for (const node of Array.from(paragraph.childNodes ?? [])) {
+      if (node.nodeType === 3) { rendered += node.textContent; continue; }
+      const children = Array.from(node.childNodes ?? []);
+      if (node.nodeType !== 1 || node.tagName !== 'SPAN' || node.className !== 'quote'
+          || !children.length || children.some(child => child.nodeType !== 3
+            || typeof child.textContent !== 'string')) return false;
+      // The host's quote component emits opening delimiter, body and closing
+      // delimiter as separate adjacent Text nodes. Joining Text nodes changes
+      // no characters; nested elements/comments remain unsupported.
+      const text = children.map(child => child.textContent).join('');
+      if (typeof text !== 'string' || text.length < 2 || !text.startsWith('“') || !text.endsWith('”')) return false;
+      edges.add(rendered.length); edges.add(rendered.length + text.length - 1);
+      rendered += text;
+    }
+  }
+  // The concealment marker alone is not authority. Bind the complete suffix to
+  // the exact locally recorded carrier, including its body, before excluding it.
+  // This remains display matching, not permission to prune or confirm delivery.
+  if (concealed.length && !matchesConcealedCarrierDisplay(carrierText, concealed)) return false;
+  // Do not infer offsets through additional host whitespace transformations.
+  if (rendered.includes('\r') || normalize(rendered) !== actual) return false;
+  const trimOffset = rendered.length - rendered.trimStart().length;
+  if (actual.length !== expected.length) return false;
+  for (let i = 0; i < actual.length; i++) {
+    if (actual[i] !== expected[i] && !(expected[i] === '"' && edges.has(i + trimOffset))) return false;
+  }
+  return true;
+}
+
+function matchesConcealedCarrierDisplay(carrierText, paragraphs) {
+  if (typeof carrierText !== 'string'
+      || !/^<hidden><ext_ctx id="dgce-[0-9a-f]{6,}">\n/.test(carrierText)) return false;
+  if (compareHostPackets(carrierText, paragraphs.join('\n\n')).equivalent) return true;
+  // Captured host rendering drops four-space continuation indentation within a
+  // paragraph (e.g. our memory support line). Project ONLY the locally bound
+  // source, never trim the observed text. Preserve paragraph boundaries, every
+  // body character and all other whitespace. This is not raw-packet evidence;
+  // cleanup and delivery continue to use unmodified compareHostPackets.
+  const sourceParagraphs = carrierText.replace(/\r\n/g, '\n').split('\n\n');
+  return sourceParagraphs.length === paragraphs.length && sourceParagraphs.every((source, index) =>
+    compareHostPackets(source.replace(/\n {4}(?=\S)/g, '\n'), paragraphs[index]).equivalent);
+}
+
+function localSendAnchorIssue(witness, roots) {
   const send = witness.send, root = roots[send?.count];
-  if (!send || clock() > send.expires || !root || witness.roots.includes(root) || !shape(root)) return false;
+  if (!send) return 'send_missing';
+  if (clock() > send.expires) return 'send_expired';
+  if (!root) return 'anchor_missing';
+  if (witness.roots.includes(root)) return 'anchor_not_new';
+  if (!shape(root)) return 'anchor_shape';
   // Bind the Instruction header to its captured wrapper as well as exact text.
   // A character named "(instructions)" or a different mode is not that row.
   if (send.mode === 'instruction' && (root.tagName !== 'DIV'
-      || classShape(root) !== 'flex flex-col rounded-md')) return false;
+      || classShape(root) !== 'flex flex-col rounded-md')) return 'instruction_shape';
   const names = root.querySelectorAll?.('div.text-sm.font-light.opacity-65') ?? [];
   const prose = root.querySelectorAll?.('.prose') ?? [];
-  return names.length === 1 && names[0].textContent === send.actor && prose.length === 1
-    && typeof prose[0].innerText === 'string'
-    && prose[0].innerText.replace(/\r\n/g, '\n').trim() === send.visibleText;
+  if (names.length !== 1 || names[0].textContent !== send.actor) return 'actor_mismatch';
+  if (prose.length !== 1) return 'prose_count';
+  return matchesLocalSendDisplay(prose[0], send.visibleText, send.carrierText) ? null : 'display_mismatch';
 }
+const newSendAnchor = (witness, roots) => localSendAnchorIssue(witness, roots) === null;
 
 function replyBatchRemount(witness, roots) {
   const send = witness.send, batch = send?.priorBatch;
@@ -271,8 +391,12 @@ function adoptSettledAddition(doc, witness, roots, texts, remounted) {
   const contiguous = remounted || witness.roots.every((root, i) => roots[i] === root && rootText(root) === witness.texts[i]);
   witness.replyBatch = send && contiguous && newSendAnchor(witness, roots)
     ? generatedBatch(doc, roots, send.count + 1, roots[send.count]) : null;
+  recordHistoryDiagnostic(doc, { reason: 'addition_settled', current_count: roots.length,
+    prior_count: witness.roots.length, contiguous, remounted: Boolean(remounted),
+    anchor_issue: localSendAnchorIssue(witness, roots), reply_batch: Boolean(witness.replyBatch),
+    reply_count: send ? roots.length - send.count - 1 : null });
   // Representation continuity cannot promote a user-attested origin to proof.
-  if (remounted && witness.scope !== 'user_attested_empty_session') witness.scope = remountScope;
+  if (remounted && !['user_attested_empty_session', 'user_attested_scenario_opening'].includes(witness.scope)) witness.scope = remountScope;
   delete witness.send;
   witness.roots = roots;
   witness.texts = texts;
@@ -283,6 +407,10 @@ function adoptSettledAddition(doc, witness, roots, texts, remounted) {
 export function historyContinuityDiagnostics(doc) {
   return (historyDiagnostics.get(doc) ?? []).map(item => ({ ...item }));
 }
+function recordHistoryDiagnostic(doc, entry) {
+  historyDiagnostics.set(doc, [...(historyDiagnostics.get(doc) ?? []),
+    { ...entry, at: new Date().toISOString() }].slice(-8));
+}
 function invalidateHistory(doc, reason) {
   const witness = historyWitnesses.get(doc);
   if (witness) {
@@ -290,8 +418,10 @@ function invalidateHistory(doc, reason) {
     const entry = { reason, at: new Date().toISOString(), expected_count: witness.roots.length,
       current_count: roots.length, owned_edit: Boolean(witness.ownedEdit), readonly_edit: Boolean(witness.edit),
       first_identity_difference: roots.findIndex((root, i) => root !== witness.roots[i]),
-      first_text_difference: roots.findIndex((root, i) => rootText(root) !== witness.texts[i]) };
-    historyDiagnostics.set(doc, [...(historyDiagnostics.get(doc) ?? []), entry].slice(-8));
+      first_text_difference: roots.findIndex((root, i) => rootText(root) !== witness.texts[i]),
+      send_present: Boolean(witness.send), prior_batch: Boolean(witness.send?.priorBatch),
+      anchor_issue: localSendAnchorIssue(witness, roots) };
+    recordHistoryDiagnostic(doc, entry);
   }
   historyWitnesses.delete(doc);
 }
@@ -472,6 +602,21 @@ async function settleHistoryAdditions(doc, waitOptions) {
 // cycle, plus explicitly checked continuity transitions. A button-free page or
 // additive DOM alone never creates a genesis witness. An explicit clean-start
 // attestation is a separate, labeled basis accepted only by the isolated UI.
+// Only extend an existing page-local witness. Never click Load all or create
+// a genesis/completeness claim from a bare DOM, saved receipt, or attestation.
+export async function settleHistoryContinuity(doc, waitOptions = undefined) {
+  return hasHistoryCompletenessWitness(doc) || await settleHistoryAdditions(doc, waitOptions);
+}
+
+// Discovery only: a load control is an opportunity to obtain evidence, not
+// evidence itself. The existing Load all cycle must still complete positively.
+export function historyLoadControl(doc) {
+  if (!supportedHistoryHost(doc)) return null;
+  const buttons = [...doc.querySelectorAll('button')].filter(visible)
+    .filter(button => (button.innerText || button.textContent || '').trim() === 'Load all');
+  return buttons.length === 1 ? buttons[0] : null;
+}
+
 export async function inspectHistoryLoad(doc, waitOptions = undefined) {
   const unknown = { supported: false, complete: false, scope: 'unverified' };
   if (!supportedHistoryHost(doc)) return unknown;
@@ -501,7 +646,8 @@ export async function inspectHistoryLoad(doc, waitOptions = undefined) {
   }, waitOptions ?? { attempts: 120, delay: 100 });
   if (!complete) return unknown;
   const roots = loadedInteractionRoots(doc);
-  historyWitnesses.set(doc, { route: doc.location.pathname, roots, texts: roots.map(rootText), scope: 'supported_host_load_all_cycle' });
+  historyWitnesses.set(doc, { route: doc.location.pathname, roots, texts: roots.map(rootText),
+    replyBatch: loadedTerminalBatch(doc, roots), scope: 'supported_host_load_all_cycle' });
   watchReadOnlyHistoryEdits(doc);
   return { supported: true, complete: true, scope: 'supported_host_load_all_cycle' };
 }

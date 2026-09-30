@@ -11,6 +11,9 @@ import { captureWorkspaceFence, workspaceFenceMatches } from '../extension/core/
 import { canAttestEmptySessionHistory, attestEmptySessionHistory, hasHistoryCompletenessWitness,
   invalidateHistoryContinuity, loadedInteractionRoots } from '../extension/host/builder-transcript.js';
 import { fixture, row } from './helpers/history-surface.js';
+import { canonicalSha256 } from '../extension/core/canonical-json.js';
+import { captureOpeningSessionHistory, openingSessionHistoryMatches, attestOpeningSessionHistory,
+  historyContinuityScope, inspectHistoryLoad, armHistoryLocalSend } from '../extension/host/builder-transcript.js';
 
 const panel = readFileSync(new URL('../extension/ui/panel.js', import.meta.url), 'utf8');
 function extract(name) {
@@ -96,6 +99,7 @@ async function harness(t, mode = 'accept') {
   const calls = [];
   const context = { ...edition, state, document: fx.doc, ConflictError, QuotaError,
     captureWorkspaceFence, workspaceFenceMatches, inspectImport, importWorkspace,
+    canonicalSha256, captureOpeningSessionHistory, openingSessionHistoryMatches, attestOpeningSessionHistory,
     canAttestEmptySessionHistory, attestEmptySessionHistory: (...args) => {
       calls.push('attest'); return attestEmptySessionHistory(...args);
     },
@@ -111,6 +115,8 @@ async function harness(t, mode = 'accept') {
       if (mode === 'route') fx.doc.location.pathname += '-other';
       if (mode === 'epoch') state.epoch++;
       if (mode === 'host') fx.roots.push(row('Kit', 'New history'));
+      if (mode === 'same-count-edit') fx.roots[0].textContent += 'changed';
+      if (mode === 'same-count-remount') fx.roots[0] = row('Narrator', 'Opening 0');
       if (mode === 'pending') state.ws.ordinary_pending = { id: 'new' };
       if (mode === 'carrier') state.ws.injections.push({ nonce: 'dgce-new', pruned: false });
       if (mode === 'archivist') state.archivistBusy = true;
@@ -127,10 +133,102 @@ async function harness(t, mode = 'accept') {
   const api = runInNewContext(`let emptySessionBusy = false, restoreBusy = false;
     ${extract('commit')}
     ${extract('confirmEmptySession')}
+    ${extract('confirmOpeningSession')}
     ${extract('restoreContinuityBackup')}
-    ({ confirmEmptySession, restoreContinuityBackup })`, context);
+    ({ confirmEmptySession, confirmOpeningSession, restoreContinuityBackup })`, context);
   return { ...api, fx, state, store, calls, initial };
 }
+
+function withOpening(h) {
+  h.fx.roots = Array.from({ length: 10 }, (_, i) => row('Narrator', `Opening ${i}`));
+  return h;
+}
+
+test('Scenario opening: durable testimony binds ten unchanged messages, not delivery or automatic proof', async t => {
+  const h = withOpening(await harness(t));
+  assert.equal((await inspectHistoryLoad(h.fx.doc)).complete, false);
+  await h.confirmOpeningSession();
+  const saved = await h.store.read();
+  assert.equal(saved.free_opening_session_attestation.kind, 'user_attested_scenario_opening');
+  assert.equal(saved.free_opening_session_attestation.count, 10);
+  assert.equal(saved.free_opening_session_attestation.snapshotHash, canonicalSha256(h.fx.roots.map(r => r.textContent)).hash);
+  assert.equal(saved.current_turn, 0);
+  assert.equal(saved.ordinary_pending, undefined);
+  assert.equal(saved.injections.length, 0);
+  assert.equal(historyContinuityScope(h.fx.doc), 'user_attested_scenario_opening');
+  assert.equal(hasHistoryCompletenessWitness(h.fx.doc), true);
+  assert.deepEqual(h.calls, ['confirm', 'cleanup']);
+  const fresh = fixture(); fresh.roots = h.fx.roots; fresh.load = false; fresh.loaded = Infinity;
+  assert.equal(hasHistoryCompletenessWitness(fresh.doc), false);
+  h.fx.roots.push(row('Kit', 'A later interaction'));
+  const settled = await inspectHistoryLoad(h.fx.doc, { attempts: 5, delay: 0 });
+  assert.equal(settled.complete, true);
+  assert.equal(settled.scope, 'user_attested_scenario_opening');
+});
+
+test('Scenario opening origin remains testimony across trusted-send reply remounts', async t => {
+  const h = withOpening(await harness(t)), fx = h.fx;
+  await h.confirmOpeningSession();
+  assert.equal(armHistoryLocalSend(fx.doc, { id: 'first', visibleText: 'Inspect the key' }), true);
+  const reply = row('Hazelnut', 'It is a large key.');
+  fx.roots.push(row('Johnny', 'Inspect the key'), reply);
+  fx.generated([reply]);
+  assert.equal((await inspectHistoryLoad(fx.doc, { attempts: 5, delay: 0 })).complete, true);
+  assert.equal(armHistoryLocalSend(fx.doc, { id: 'second', visibleText: 'Ask about doors' }), true);
+  reply.isConnected = false;
+  fx.roots[11] = row('Hazelnut', 'It is a large key.');
+  const next = row('Hazelnut', 'Doors are extra.');
+  fx.roots.push(row('Johnny', 'Ask about doors'), next);
+  fx.generated([next]);
+  const settled = await inspectHistoryLoad(fx.doc, { attempts: 5, delay: 0 });
+  assert.equal(settled.complete, true);
+  assert.equal(settled.scope, 'user_attested_scenario_opening');
+});
+
+for (const mode of ['cancel', 'local-replacement', 'local-mutation', 'route', 'epoch', 'host',
+  'same-count-edit', 'same-count-remount', 'pending', 'carrier', 'archivist', 'pruning',
+  'editor-busy', 'failed-write', 'external-write', 'host-after-write', 'route-after-write']) {
+  test(`Scenario opening refuses stale or unsafe confirmation: ${mode}`, async t => {
+    const h = withOpening(await harness(t, mode));
+    await h.confirmOpeningSession();
+    assert.equal(hasHistoryCompletenessWitness(h.fx.doc), false);
+    assert.equal(h.calls.includes('cleanup'), false);
+    assert.equal(Boolean((await h.store.read()).free_opening_session_attestation), mode.endsWith('after-write'));
+  });
+}
+
+for (const mode of ['empty', 'load-all', 'unsupported', 'carrier-text', 'pending-before', 'used-workspace', 'desynchronized']) {
+  test(`Scenario opening ineligible before prompting: ${mode}`, async t => {
+    const h = withOpening(await harness(t));
+    if (mode === 'empty') h.fx.roots = [];
+    if (mode === 'load-all') h.fx.load = true;
+    if (mode === 'unsupported') h.fx.doc.documentElement.lang = 'fr';
+    if (mode === 'carrier-text') h.fx.roots[0].textContent = '<ext_ctx id="dgce-old">hidden</ext_ctx>';
+    if (mode === 'pending-before') h.state.ws.ordinary_pending = { id: 'saved' };
+    if (mode === 'used-workspace') h.state.ws.current_turn = 1;
+    if (mode === 'desynchronized') h.state.ws.timeline_integrity.desynchronized = true;
+    await h.confirmOpeningSession();
+    assert.deepEqual(h.calls, []);
+    assert.equal(hasHistoryCompletenessWitness(h.fx.doc), false);
+  });
+}
+
+test('Scenario opening UI ignores synthetic clicks and replaces confirmation only with a current witness', async t => {
+  const h = withOpening(await harness(t)); let clicks = 0;
+  const view = runInNewContext(`${extract('openingSessionSection')}\nopeningSessionSection`, {
+    el: (tag, props, ...children) => ({ tag, props, children }), state: h.state,
+    document: h.fx.doc, hasHistoryCompletenessWitness, emptySessionBusy: false,
+    confirmOpeningSession: () => clicks++,
+  });
+  const button = view().children.find(c => c.tag === 'button');
+  button.props.onclick({ isTrusted: false }); assert.equal(clicks, 0);
+  button.props.onclick({ isTrusted: true }); assert.equal(clicks, 1);
+  await h.confirmOpeningSession();
+  assert.equal(view().props.role, 'status');
+  assert.equal(view().children.some(c => c.tag === 'button'), false);
+  invalidateHistoryContinuity(h.fx.doc);
+  assert.ok(view().children.some(c => c.tag === 'button'));
+});
 
 test('Free empty-session confirmation records testimony before granting page-local clearance', async t => {
   const h = await harness(t);

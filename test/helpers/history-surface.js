@@ -3,7 +3,7 @@ export function row(actor, body) {
   const root = { tagName: 'DIV', className: 'flex flex-col rounded-md min-h-12', isConnected: true,
     textContent: actor + body, actor, body,
     querySelectorAll(s) {
-      if (s === '.prose') return [{ innerText: this.body }];
+      if (s === '.prose') return [this.prose ?? { innerText: this.body }];
       if (s === 'div.text-sm.font-light.opacity-65') return [{ textContent: this.actor }];
       return [];
     },
@@ -13,6 +13,36 @@ export function row(actor, body) {
   root.edit = { closest: () => root };
   root.group = { contains: x => x === root };
   root.group.parentElement = { tagName: 'DIV', className: 'flex flex-col', children: [root.group] };
+  return root;
+}
+// Actual host dialogue shape: paragraphs containing text and span.quote nodes.
+export function dialogueRow(actor, source) {
+  const text = value => ({ nodeType: 3, textContent: value });
+  const paragraphs = source.split('\n\n').map(part => {
+    const children = []; let end = 0;
+    for (const match of part.matchAll(/"([^"\n]*)"/g)) {
+      children.push(text(part.slice(end, match.index)));
+      children.push({ nodeType: 1, tagName: 'SPAN', className: 'quote',
+        childNodes: [text('“'), text(match[1]), text('”')] });
+      end = match.index + match[0].length;
+    }
+    children.push(text(part.slice(end)));
+    return { nodeType: 1, tagName: 'P', childNodes: children };
+  });
+  const rendered = source.replace(/"([^"\n]*)"/g, '“$1”');
+  const root = row(actor, rendered);
+  root.prose = { innerText: rendered, childNodes: paragraphs.flatMap((p, i) => i ? [text('\n'), p] : [p]) };
+  return root;
+}
+export function appendConcealedCarrier(root, carrier) {
+  for (const part of carrier.split('\n\n')) {
+    root.prose.childNodes.push({ nodeType: 3, textContent: '\n' }, {
+      nodeType: 1, tagName: 'P', textContent: part, style: { display: 'none' },
+      getAttribute: name => name === 'data-dgce-concealed' ? '1' : null,
+      childNodes: [{ nodeType: 3, textContent: part }],
+    });
+  }
+  root.textContent += carrier;
   return root;
 }
 export function fixture() {

@@ -1,40 +1,49 @@
-# Demo status and editorial changes
+# Quantum Enchantments demo status
 
-Package: QE public demo revision 1, September 26, 2026.
+Revision 3, September 30, 2026. Included with DGCE 0.7.163 for beta play.
 
-## Basis
+## Contents
 
-Based on the approved September 23 **Quantum Enchantments: The Waykey** scenario. The story, quest, cast, artifact rules and narrative opening are preserved. This is a self-contained public episode, not an assertion that every episode detail is established novel canon.
+SCENARIO.md is the single setup document: scenario fields, eight opening
+interactions, six optional Chaos Deck cards, and extension setup instructions.
+The demo can be played without DGCE. With DGCE, players can also try continuity,
+selective recall and the optional deck.
 
-The earlier scenario had two pilot routes with eleven player turns observed: cooperative rescue/return and refusal/logout. The rescue reached a local ending. Refusal was respected, but clean closure required an explicit request. The test also observed inconsistent break timing, some physical/VR sensory bleed and repeated briefings. That evidence is narrow and model-dependent, not a guarantee across models or long sessions. Part of the early test involved extension recovery intervention; it was not a clean end-to-end DGCE integration test.
+This is the expanded demo, not the token-limited contest entry. It retains
+OpenMouth's impersonal mock-heroic voice, separate cyberpunk reality narration,
+independent NPC initiative, player-directed reality changes and optional
+relationship development.
 
-## Changes in this package
+## Revision and testing
 
-1. Remove the contest hashtag from the public listing text.
-2. Add plain-language knowledge separation and prevent physical-world sensory traits from appearing on the avatar without cause.
-3. Require consistent established clocks without invented decorative minute counts or assumed time dilation.
-4. Allow action to replace repeated briefings after agreement.
-5. Give a closing beat after refusal/departure rather than automatically reopening the quest next day.
+The revision adds Aurelia's required character description and refines
+instructions for scene-only output, player-action scope, information boundaries,
+schedule commitments and continuity. The earlier expanded setup received a
+twenty-turn playtest; this revision received six focused turns on first-party
+GLM 5.3 with Thinking High.
 
-The original contest source is untouched. These are editorial fixes, not machinery or private runtime disclosures. The revised fields have not been loaded into a live DreamGen scenario or newly playtested during packaging. No updated editor-token count or contest approval is claimed.
+Structural verification covers nine copyable fields, five well-formed XML
+blocks, eight opening interactions, six cards, an exact seven-file inventory
+and six content hashes. Narrative test notes are maintained separately from
+the public setup guide.
 
-## Before promoting the demo as fully retested
+## Extension use
 
-- Save all fields in the current DreamGen editor; verify the persona and narrative opening.
-- Play the rescue path through return, checking reward and physical-break continuity.
-- Decline, leave and rest; check that the episode closes without a forced next-day summons.
-- Try an inspection without touching; test a private thought and a physical-world interruption.
-- With DGCE active, verify delivery, a reviewed Archivist update, subsequent recall and a backup/restore in a disposable session.
-- If showcasing the deck, separately test a reviewed suggestion without changing Bob's choice or making future events remembered facts.
+Export continuity before changing installations or profiles. Temporary
+Assistant mode is optional, requires an empty chat and explicit confirmation,
+and must not share the Assistant chat with concurrent manual use.
 
-Key-first defection, impossible destinations, genuine companion disagreement, combat, other models and long sessions remain outside the earlier pilot coverage. Occasional narration errors are a known model limitation, not evidence that the whole extension is unusable.
+Normal scheduling, temporary-mode refusal, isolated empty-chat cleanup and
+cold-reload recovery have mounted test evidence. The complete fresh in-page
+pagination-loss, Load all recovery and next-send sequence remains a live test
+coverage gap. See the extension handoff for its scoped engineering evidence.
 
-## Packaging boundary
+## Rights and package identity
 
-This is a demo-only add-on. It contains no extension runtime, root repository README, build-status file or software license replacement. The setup was checked against the public DGCE source at commit `0b6daae6de284af3c2387447b2f6597ff080502b`; Sheila's separately repackaged extension remains authoritative. This packaging does not assign the story a new license or apply the extension's software license to it.
+The software and story have separate licenses. RIGHTS.md preserves the demo's
+grant and restrictions; only its obsolete fields-folder reference was removed.
 
-When this demo is distributed inside the public DGCE repository, keep an
-explicit separate rights notice with it so the creative/demo text is not
-mistaken for MPL-covered software content.
-
-No public repository, remote scenario, installed extension or live campaign was modified. No API/model calls were purchased or performed.
+The exact release archive is identified by its SHA-256 sidecar and the
+ZIP-adjacent PACKAGE-RECEIPT.md. Shel reviewed the preceding .163 archive;
+this documentation/demo refresh has its own identity. No extension runtime
+change or new permissions are part of this refresh.

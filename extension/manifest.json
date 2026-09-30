@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "DGCE",
-  "version": "0.7.146",
+  "version": "0.7.163",
   "minimum_chrome_version": "106",
   "description": "Unofficial continuity and Chaos Deck companion for DreamGen sessions.",
   "permissions": [
@@ -39,5 +39,5 @@
       ]
     }
   ],
-  "version_name": "0.7.146 public build"
+  "version_name": "0.7.163 public candidate"
 }

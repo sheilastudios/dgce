@@ -1,7 +1,9 @@
 # Continuity workflows — 0.7.135
 
-These additions are shared by Free and Full/Pro. Chaos Deck remains included in
-Free. The mechanical game engines remain Full-only.
+These workflows were introduced in .135 and remain included in the current
+public-build candidate, along with Chaos Deck. Mechanical game engines are
+not included. This workflow guide is not a release-approval receipt; current
+status is recorded in BUILD-STATUS.json.
 
 ## Recall and Objects
 

@@ -117,6 +117,7 @@ test('Free assembled readback completes only the current bound ordinary action, 
     const verify = runInNewContext(`${extract('verifyFreeOrdinaryReadback')}\nverifyFreeOrdinaryReadback`, {
       ...edition, state, structuredClone, stripInjections, markInjectionObserved, SESSION_READBACK: 'readback',
       workspaceIdFromLocation: () => ws.workspace_id, isCurrent: epoch => epoch === state.epoch,
+      scheduleArchivistRecheck() { assert.equal(state.freeReadback.busy, false); },
       chrome: { runtime: { sendMessage: async () => {
         sends++; if (mode === 'stale') state.epoch++;
         if (mode === 'local_nonce') { state.ws.ordinary_pending.nonce = 'dgce-other'; state.ws.injections[0].nonce = 'dgce-other'; }
@@ -196,6 +197,7 @@ for (const mode of ['exact', 'wrong_source', 'packet', 'parent', 'stale', 'faile
     const verify = runInNewContext(`${extract('verifyFreePlainOrdinaryReadback')}\n${extract('verifyFreeOrdinaryReadback')}\nverifyFreeOrdinaryReadback`, {
       ...edition, state, structuredClone, plainOrdinaryBinding, matchesPlainOrdinaryBinding, completePlainOrdinaryReadback,
       SESSION_READBACK: 'readback', workspaceIdFromLocation: () => ws.workspace_id, isCurrent: e => e === state.epoch,
+      scheduleArchivistRecheck() { assert.equal(state.freeReadback.busy, false); },
       chrome: { runtime: { sendMessage: async request => {
         sends++; assert.equal(request.interactionId, 'i1');
         if (mode === 'stale') state.epoch++;
@@ -286,7 +288,8 @@ test('Free reload probes saved pending actions after hydration without requiring
   let probes = 0;
   const observe = runInNewContext(`${extract('observeOwnedCarriersInHost')}\nobserveOwnedCarriersInHost`, {
     editionWorkspaceIssue: () => null, state: { ws: { injections: [] }, store: {} }, document: { body: {} },
-    discoverOwnedInjectionCarriers: () => [], verifyFreeOrdinaryReadback: () => { probes++; },
+    discoverOwnedInjectionCarriers: () => [], verifyFreeOrdinaryReadback: () => { probes++; }, async refreshFreeHistoryContinuity() {},
+    isCurrent: () => true, scheduleArchivistRecheck() {},
   });
   observe(); assert.equal(probes, 1, 'no rendered carrier must not suppress the independent read-only probe');
 });

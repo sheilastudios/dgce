@@ -3,8 +3,8 @@
 The DGCE software in this repository is licensed separately under
 **MPL-2.0**.
 
-The creative/demo content in this directory — including `SCENARIO.md`, the
-files under `fields/`, and the demo-specific narrative/setup/status text for
+The creative/demo content in this directory — including `SCENARIO.md` and
+the demo-specific narrative/setup/status text for
 **Quantum Enchantments: The Waykey** — is **not** licensed under MPL-2.0
 unless a file in this directory explicitly says otherwise.
 

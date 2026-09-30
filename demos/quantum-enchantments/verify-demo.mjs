@@ -1,36 +1,92 @@
-import { readFileSync, readdirSync, writeFileSync } from 'node:fs';
-import { createHash } from 'node:crypto';
-import { fileURLToPath } from 'node:url';
-import { join, relative } from 'node:path';
 import assert from 'node:assert/strict';
-const root = fileURLToPath(new URL('.', import.meta.url));
-const demo = root;
-const expectedHeadings = ['Title', 'Brief description', 'Public description', 'Setting', 'Player character: Johnny / Bob', 'Character: Hazelnut', 'Plot', 'Opening description', 'Opening message (narrative)'];
-const fieldFiles = ['01-title.txt', '02-brief-description.txt', '03-public-description.txt', '04-setting.txt', '05-player-description.txt', '06-hazelnut.txt', '07-plot.txt', '08-opening-description.txt', '09-opening-narrative.txt'];
-const text = readFileSync(join(demo, 'SCENARIO.md'), 'utf8').replaceAll('\r\n', '\n');
-const headings = [...text.matchAll(/^# (.+)$/gm)];
-assert.deepEqual(headings.map(x => x[1]), expectedHeadings);
-for (let i = 0; i < headings.length; i++) {
-  const expected = text.slice(headings[i].index + headings[i][0].length, headings[i + 1]?.index ?? text.length).trim() + '\n';
-  assert.equal(readFileSync(join(demo, 'fields', fieldFiles[i]), 'utf8'), expected, fieldFiles[i]);
+import { createHash } from 'node:crypto';
+import { readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { dirname, join, relative, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+export const expectedFiles = ['DEMO-MANIFEST.json', 'DEMO-STATUS.md', 'README.md', 'RIGHTS.md', 'SCENARIO.md', 'verify-demo.mjs', 'verify-demo.test.mjs'].sort();
+const requiredFields = ['Title', 'Brief description', 'Public description', 'Setting', 'Player character: Johnny / Bob', 'Character: Hazelnut', 'Style', 'Plot', 'Opening description'];
+
+export function inspectScenario(input) {
+  const text = input.replaceAll('\r\n', '\n');
+  const headings = [...text.matchAll(/^## (.+)$/gm)];
+  assert.equal(new Set(headings.map(h => h[1])).size, headings.length, 'duplicate section');
+  const sections = Object.fromEntries(headings.map((h, i) => [h[1], text.slice(h.index + h[0].length, headings[i + 1]?.index ?? text.length).trim()]));
+  const body = name => {
+    const match = sections[name]?.match(/^```(text|xml)\n([\s\S]*?)\n```$/);
+    assert.ok(match, `one fenced copy block required: ${name}`);
+    return match[2];
+  };
+  for (const name of requiredFields) body(name);
+  assert.equal(body('Title'), 'Quantum Enchantments: The Waykey');
+  assert.ok(body('Brief description').length <= 75, 'brief too long');
+  assert.ok(!text.includes('#oc2026'), 'demo must not claim contest entry');
+  assert.ok(!text.includes('<ext_ctx'), 'no injected carrier in source');
+  const xmlFields = ['Setting', 'Player character: Johnny / Bob', 'Character: Hazelnut', 'Style', 'Plot'];
+  for (const name of xmlFields) assert.match(sections[name], /^```xml\n/);
+  // XML is additionally parsed with .NET XmlDocument in the package check.
+  // These checks pin copy structure and regression intent, not model semantics.
+  assert.match(body('Setting'), /simultaneous physical awareness is rare/);
+  assert.match(body('Setting'), /Transcript presence is not transmission/);
+  assert.match(body('Setting'), /Cynthia is not Hazelnut/);
+  assert.match(body('Character: Hazelnut'), /Hazelnut is a were-squirrel/);
+  assert.match(body('Character: Hazelnut'), /no tail, fur or animal ears/);
+  assert.match(body('Character: Hazelnut'), /Chemistry may develop; never assume Bob reciprocates/);
+  assert.match(body('Plot'), /<npc_initiative>/);
+  assert.match(body('Plot'), /floor hatch ABOVE Pip/);
+  assert.match(body('Plot'), /Settle applicable agreed rewards/);
+  assert.match(body('Style'), /not NPC\s+dialogue/);
+  assert.match(body('Style'), /Figurative\s+personification/);
+  assert.match(body('Style'), /never a separate commentator/);
+  assert.match(body('Style'), /Never append an unattended-world cutaway/);
+  const openings = [...(sections['Opening interactions'] ?? '').matchAll(/^### (\d+)\. (Narrative|Character — [^\n]+)\n\n```text\n([\s\S]*?)\n```/gm)];
+  assert.equal(openings.length, 8, 'eight opening interactions required');
+  assert.deepEqual(openings.map(m => Number(m[1])), [1,2,3,4,5,6,7,8]);
+  assert.deepEqual(openings.map(m => m[2]), ['Narrative','Character — High Priestess Aurelia','Character — Hazelnut','Character — High Priestess Aurelia','Character — Hazelnut','Character — High Priestess Aurelia','Narrative','Character — High Priestess Aurelia']);
+  const openingText = openings.map(m => m[3]).join('\n');
+  assert.doesNotMatch(openingText, /Cynthia|NeoKing|five minutes|Meanwhile/);
+  assert.match(openingText, /What would you need to know/);
+  const cards = [...(sections['Optional Chaos Deck cards — not scenario fields'] ?? '').matchAll(/^### (.+)\n\n```text\n([\s\S]*?)\n```/gm)];
+  assert.equal(cards.length, 6);
+  assert.equal(new Set(cards.map(m => m[1])).size, 6);
+  for (const card of cards) {
+    assert.ok(card[2].length <= 220, `card length: ${card[1]}`);
+    assert.match(card[2], /Ignore otherwise\.$/, `ignore permission: ${card[1]}`);
+  }
+  assert.match(sections['Optional Chaos Deck cards — not scenario fields'], /protection from refill eviction, not from consumption/);
+  return { copyableFields: requiredFields.length, xmlFields: xmlFields.length, openingInteractions: openings.length, optionalDeckCards: cards.length };
 }
-assert.ok(!text.includes('#oc2026'));
-assert.ok(!text.includes('<ext_ctx'));
-assert.ok(readFileSync(join(demo, 'fields/02-brief-description.txt'), 'utf8').trim().length <= 75);
-const walk = dir => readdirSync(dir, { withFileTypes: true }).flatMap(entry => {
-  assert.ok(!entry.isSymbolicLink());
-  return entry.isDirectory() ? walk(join(dir, entry.name)) : [join(dir, entry.name)];
-});
-const entries = walk(demo).filter(p => relative(demo, p) !== 'DEMO-MANIFEST.json').map(p => {
-  const bytes = readFileSync(p);
-  return { path: relative(root, p).replaceAll('\\', '/'), bytes: bytes.length, sha256: createHash('sha256').update(bytes).digest('hex') };
-}).sort((a, b) => a.path < b.path ? -1 : a.path > b.path ? 1 : 0);
-assert.ok(entries.every(e => !e.path.startsWith('extension/') && !e.path.includes('/.git/')));
-if (process.argv.includes('--seal')) writeFileSync(join(root, 'DEMO-MANIFEST.json'), JSON.stringify({
-  schema_version: 1, package: 'QE-The-Waykey-public-demo-r1', date: '2026-09-26',
-  scope: 'Demo only; no extension runtime or replacement repository metadata.',
-  source: 'QE_The_Waykey_SCENARIO_v1.md, 2026-09-23',
-  new_live_playtest: false, exclusion: 'Manifest excludes itself; ZIP hash binds the full artifact.', files: entries,
-}, null, 2) + '\n');
-assert.deepEqual(JSON.parse(readFileSync(join(demo, 'DEMO-MANIFEST.json'), 'utf8')).files, entries);
-console.log(JSON.stringify({ fileHashesPassed: entries.length, scenarioFieldsMatched: headings.length, noExtensionFiles: true, livePlaytestPerformed: false }, null, 2));
+
+export function inventory(root) {
+  const walk = dir => readdirSync(dir, { withFileTypes: true }).flatMap(e => {
+    assert.ok(!e.isSymbolicLink(), 'symlink disallowed');
+    return e.isDirectory() ? walk(join(dir, e.name)) : [join(dir, e.name)];
+  });
+  const files = walk(root).map(p => relative(root, p).replaceAll('\\', '/')).sort();
+  assert.deepEqual(files, expectedFiles, 'unexpected or missing package members');
+  return files.filter(p => p !== 'DEMO-MANIFEST.json').map(path => {
+    const data = readFileSync(join(root, path));
+    return { path, bytes: data.length, sha256: createHash('sha256').update(data).digest('hex') };
+  });
+}
+
+export function verifyManifest(manifest, entries) {
+  assert.equal(manifest.package, 'QE-The-Waykey-expanded-demo-r3');
+  assert.equal(manifest.livePlaytestScope, 'focused-private-clone-not-end-to-end');
+  assert.equal(manifest.stableReleaseApproved, false);
+  assert.deepEqual(manifest.files, entries, 'artifact hash/inventory mismatch');
+}
+
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  const root = dirname(fileURLToPath(import.meta.url));
+  const results = inspectScenario(readFileSync(join(root, 'SCENARIO.md'), 'utf8'));
+  if (process.argv.includes('--seal')) {
+    // Generated manifest only; the archive SHA binds this manifest too.
+    writeFileSync(join(root, 'DEMO-MANIFEST.json'), '{}\n');
+    const files = inventory(root);
+    writeFileSync(join(root, 'DEMO-MANIFEST.json'), JSON.stringify({ schema: 3, package: 'QE-The-Waykey-expanded-demo-r3', date: '2026-09-30', livePlaytestScope: 'focused-private-clone-not-end-to-end', stableReleaseApproved: false, excludes: 'Manifest excludes itself; any external ZIP SHA must bind all members.', files }, null, 2) + '\n');
+  }
+  const entries = inventory(root);
+  verifyManifest(JSON.parse(readFileSync(join(root, 'DEMO-MANIFEST.json'), 'utf8')), entries);
+  console.log(JSON.stringify({ ...results, hashesPassed: entries.length, exactInventory: expectedFiles.length, livePlaytestScope: 'focused-private-clone-not-end-to-end', stableReleaseApproved: false }, null, 2));
+}

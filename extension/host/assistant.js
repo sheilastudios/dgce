@@ -34,33 +34,110 @@ const TAB_NAMES = ['Scenario', 'Settings', 'Assistant'];
 const byText = (text, doc = document) =>
   [...doc.querySelectorAll('button')].find((b) => b.textContent.trim() === text) ?? null;
 
-/** Exact Assistant tabpanel root. All automated lookups remain inside it. */
+const visible = node => {
+  const r = node?.getBoundingClientRect?.();
+  return Boolean(node?.isConnected !== false && r?.width > 0 && r?.height > 0);
+};
+const unique = nodes => nodes.length === 1 ? nodes[0] : null;
+const assistantDialogs = doc => [...doc.querySelectorAll('[role="dialog"]')].filter(node => {
+  if (!visible(node)) return false;
+  const ids = (node.getAttribute('aria-labelledby') ?? '').split(/\s+/).filter(Boolean);
+  const label = node.getAttribute('aria-label') ?? ids.map(id => doc.getElementById(id)?.textContent ?? '').join(' ');
+  return label.trim() === 'Assistant';
+});
+
+/** Exact visible Assistant surface. Never fall back to a page-wide composer. */
 export function resolveAssistantPanel(doc = document) {
+  const dialogs = assistantDialogs(doc);
+  if (dialogs.length) {
+    const panel = unique(dialogs);
+    return panel && panel.querySelectorAll('button[aria-label="Close assistant"]').length === 1
+      ? panel : null;
+  }
   const tab = byText(SELECTORS.tab, doc);
   const panelId = tab?.getAttribute('aria-controls');
-  return panelId ? doc.getElementById(panelId) : null;
+  const panel = panelId ? doc.getElementById(panelId) : null;
+  return visible(panel) ? panel : null;
 }
+
+/** Exclude only the exact Assistant surface; nested/unrelated modals still block. */
+export function assistantBlockingDialogs(doc = document, panel = resolveAssistantPanel(doc)) {
+  return [...doc.querySelectorAll('[role="alertdialog"], [role="dialog"]')]
+    .filter(node => node !== panel && visible(node));
+}
+
+/** Both observed layouts keep status outside message content. */
+export function assistantStatus(panel) {
+  return panel?.querySelector(':scope > [role="status"]')
+    ?? panel?.querySelector(':scope > div > [role="status"]');
+}
+
+// Host activity, not words inside a reply or its thinking transcript. The hard
+// cap below still bounds a stuck host status. Never change the user's model mode.
+export function assistantGenerationActive(panel) {
+  const status = String(assistantStatus(panel)?.textContent ?? '').trim();
+  return /^AI is (?:thinking|responding|generating)\.?$/i.test(status)
+    || [...(panel?.querySelectorAll('button[aria-label="Stop response"]') ?? [])]
+      .some(button => visible(button) && !button.disabled);
+}
+
+export const ASSISTANT_IDLE_TIMEOUT_MS = 90000;
+export const ASSISTANT_MAX_WAIT_MS = 600000;
 
 /** Which right-panel tab is currently showing, or null if it cannot be told. */
 export function activeTabName(doc = document) {
+  if (assistantDialogs(doc).length === 1) return SELECTORS.tab;
   for (const name of TAB_NAMES) {
     const b = byText(name, doc);
-    if (b?.getAttribute('aria-selected') === 'true') return name;
+    if (visible(b) && b.getAttribute('aria-selected') === 'true') return name;
   }
   return null;
 }
 
-export function openAssistant(doc = document) {
+// The native desktop tools pane may be zero-width while its tab buttons retain
+// nonzero rectangles. Use the observed accessible splitter, not CSS mutation or
+// a hidden composer. Enter is the host's collapse/restore keyboard action.
+function toolsPaneControl(doc) {
+  const tools = doc.getElementById('game-session-tools');
+  if (!tools) return null;
+  const handles = [...(tools.parentElement?.querySelectorAll(
+    '[role="separator"][aria-label="Toggle tools panel"]') ?? [])]
+    .filter(node => visible(node) && node.getAttribute('aria-controls') === 'game-session-content');
+  const handle = unique(handles);
+  return handle ? { tools, handle } : null;
+}
+function toggleTools(handle, doc) {
+  const Keyboard = doc.defaultView?.KeyboardEvent;
+  if (!Keyboard) return false;
+  handle.dispatchEvent(new Keyboard('keydown', { key: 'Enter', code: 'Enter', bubbles: true, cancelable: true }));
+  return true;
+}
+
+export function openAssistant(doc = document, view = null) {
+  if (assistantBlockingDialogs(doc).length) return false;
+  const tools = toolsPaneControl(doc);
+  if (tools && tools.handle.getAttribute('aria-valuenow') === '100'
+      && tools.tools.getBoundingClientRect().width === 0) {
+    if (!toggleTools(tools.handle, doc)) return false;
+    if (view?.tools?.handle === tools.handle) view.tools.opened = true;
+  }
+  if (resolveAssistantPanel(doc)) return Boolean(findComposer(doc));
+  const launchers = [...doc.querySelectorAll('button[aria-label="Open Writing Assistant"]')].filter(visible);
+  if (launchers.length) {
+    const launcher = unique(launchers);
+    if (!launcher || launcher.disabled) return false;
+    launcher.click();
+    return true;
+  }
   const tab = byText(SELECTORS.tab, doc);
-  if (!tab) return false;
+  if (!visible(tab) || tab.disabled) return false;
   tab.click();
   return true;
 }
 
 export function findComposer(doc = document) {
-  // DreamGen gives the tab an aria-controls pointer to its panel. Use that
-  // relationship rather than a screen coordinate: the extension drawer and
-  // browser width both move the Assistant across the old x >= 900 boundary.
+  // Resolve the visible named dialog or legacy tab's aria-controls target.
+  // Hidden duplicate editors and screen position never select a composer.
   const panel = resolveAssistantPanel(doc);
   if (!panel) return null;
 
@@ -71,12 +148,60 @@ export function findComposer(doc = document) {
   return candidates.length === 1 ? candidates[0] : null;
 }
 
+export function captureAssistantView(doc = document) {
+  const tab = activeTabName(doc);
+  const control = toolsPaneControl(doc);
+  const tools = control?.handle.getAttribute('aria-valuenow') === '100'
+    && control.tools.getBoundingClientRect().width === 0 ? control : null;
+  return { tab, panel: tab === SELECTORS.tab ? resolveAssistantPanel(doc) : null,
+    tools,
+    route: String(doc.location?.href ?? '').split('#')[0] };
+}
+
+export async function restoreAssistantView(view, panel, doc = document) {
+  const composer = findComposer(doc);
+  const expanded = view?.tools?.opened;
+  if (!view || (!expanded && (view.tab === SELECTORS.tab || view.panel === panel))
+    || String(doc.location?.href ?? '').split('#')[0] !== view.route
+    || !panel || resolveAssistantPanel(doc) !== panel
+    || assistantBlockingDialogs(doc, panel).length
+    || !composer || String(composerValue(composer) ?? '').length) return;
+  if (assistantDialogs(doc).includes(panel)) {
+    const close = unique([...panel.querySelectorAll('button[aria-label="Close assistant"]')].filter(visible));
+    if (close && !close.disabled) {
+      close.click();
+      // React/host exit animation is asynchronous. A following ask must not
+      // adopt this still-visible but closing panel and type into a dying node.
+      // Long transcripts can keep the host's closing dialog mounted beyond
+      // two seconds. Wait for actual teardown, not an assumed animation time.
+      // This is still bounded and never promotes a visible panel to closed.
+      const deadline = Date.now() + 10000;
+      while (visible(panel) && panel.isConnected !== false) {
+        if (Date.now() >= deadline) throw new AssistantError('Assistant close did not settle; next request deferred');
+        await new Promise(resolve => setTimeout(resolve, 25));
+      }
+    }
+  } else if (view.tab && view.tab !== SELECTORS.tab) {
+    const tab = byText(view.tab, doc);
+    if (visible(tab)) tab.click();
+  }
+  const tools = toolsPaneControl(doc);
+  if (expanded && tools?.handle === view.tools.handle
+      && view.tools.expandedValue && view.tools.expandedValue !== '100'
+      && tools.handle.getAttribute('aria-valuenow') === view.tools.expandedValue) {
+    toggleTools(tools.handle, doc);
+  }
+}
+
 /** Poll for the composer, because the panel needs a moment to mount. */
-async function awaitComposer({ timeoutMs = 3000, pollMs = 100, doc = document } = {}) {
+export async function awaitComposer({ timeoutMs = 3000, pollMs = 100, doc = document, view = null } = {}) {
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
     const el = findComposer(doc);
-    if (el) return el;
+    if (el) {
+      if (view?.tools?.opened) view.tools.expandedValue = view.tools.handle.getAttribute('aria-valuenow');
+      return el;
+    }
     await new Promise((r) => setTimeout(r, pollMs));
   }
   return null;
@@ -89,6 +214,42 @@ async function awaitComposer({ timeoutMs = 3000, pollMs = 100, doc = document } 
  */
 export function composerValue(el) {
   return el?.matches?.('[contenteditable="true"]') ? el.textContent : el?.value;
+}
+
+const chatSnapshot = panel => JSON.stringify(messageNodes(panel).map(node => String(node.innerText ?? '')));
+
+/** Bounded UI-settlement mitigation, not proof of server history completeness.
+ * A composer can mount before saved Assistant messages hydrate. Do not type
+ * into that initial empty render or measure its apparent zero-token history.
+ * The per-send marker remains mandatory if hydration happens still later. */
+export async function awaitAssistantSettled(panel, { doc = document,
+  quietMs = 1000, emptyGraceMs = 5000, timeoutMs = 10000, pollMs = 100,
+  now = () => Date.now(), sleep = ms => new Promise(resolve => setTimeout(resolve, ms)),
+} = {}) {
+  const route = String(doc.location?.href ?? '').split('#')[0];
+  const started = now();
+  let stableSince = started;
+  let previous = null;
+  let previousComposer = null;
+  while (now() - started < timeoutMs) {
+    if (String(doc.location?.href ?? '').split('#')[0] !== route
+      || resolveAssistantPanel(doc) !== panel || assistantBlockingDialogs(doc, panel).length) {
+      throw new AssistantError('Assistant surface changed during readiness; no request sent');
+    }
+    const composer = findComposer(doc);
+    if (!composer) throw new AssistantError('Assistant composer disappeared during readiness; no request sent');
+    if (String(composerValue(composer) ?? '').length) throw new AssistantError('Assistant composer contains a user draft; automation deferred');
+    if (assistantGenerationActive(panel)) throw new AssistantError('Assistant is still generating; no request sent');
+    const current = chatSnapshot(panel);
+    if (current !== previous || composer !== previousComposer) {
+      previous = current; previousComposer = composer; stableSince = now();
+    }
+    if (now() - stableSince >= quietMs && (current !== '[]' || now() - started >= emptyGraceMs)) {
+      return { composer, snapshot: current };
+    }
+    await sleep(pollMs);
+  }
+  throw new AssistantError('Assistant history did not settle before preparation; no request sent');
 }
 
 export function setComposerValue(el, text, { allowReplace = false } = {}) {
@@ -152,14 +313,15 @@ export function lastMessageText(panel = resolveAssistantPanel()) {
   return nodes.length ? nodes[nodes.length - 1].innerText : '';
 }
 
-/** Cheap fingerprint so a reply can be told apart from the prompt that caused it. */
+/** Display comparison, not request identity. Production asks use a fresh marker. */
 const head = (s) => String(s).replace(/\s+/g, ' ').trim().slice(0, 60);
+const normalizedDisplay = s => String(s).replace(/\s+/g, ' ').trim();
 
 /** Watch the host's accessibility status, never text inside chat messages.
  * A banner left over from an earlier run is not a failure of this request. */
 export function watchAssistantFailure(panel, { Observer = globalThis.MutationObserver } = {}) {
   const read = () => {
-    const node = panel?.querySelector(':scope > [role="status"]');
+    const node = assistantStatus(panel);
     return { node, text: String(node?.textContent ?? '').trim() };
   };
   let previous = read();
@@ -196,38 +358,57 @@ export async function waitForReply({
   panel = resolveAssistantPanel(),
   beforeCount,
   prompt = '',
-  timeoutMs = 90000,
+  requestMarker = null,
+  timeoutMs = ASSISTANT_IDLE_TIMEOUT_MS,
+  maxWaitMs = ASSISTANT_MAX_WAIT_MS,
   pollMs = 400,
   stableSamples = 4,
   isComplete = null,
   getHostError = () => null,
   onPromptAcknowledged = () => {},
+  now = () => Date.now(),
+  sleep = ms => new Promise(resolve => setTimeout(resolve, ms)),
 } = {}) {
   const promptHead = head(prompt);
-  const deadline = Date.now() + timeoutMs;
-  let lastLen = -1;
+  const started = now();
+  let lastActivity = started;
+  let lastText = null;
   let stable = 0;
   let ownedPromptIndex = -1;
   let promptAcknowledged = false;
+  let expired = 'hard limit';
 
-  while (Date.now() < deadline) {
-    await new Promise((r) => setTimeout(r, pollMs));
+  while (now() - started < maxWaitMs) {
+    await sleep(pollMs);
+    if (now() - started >= maxWaitMs) break;
 
-    if (!panel) throw new AssistantError('Assistant panel disappeared during owned round trip');
-    const nodes = messageNodes(panel);
-    if (ownedPromptIndex < 0) {
-      ownedPromptIndex = nodes.findIndex(
-        (node, index) => index >= beforeCount && head(node.innerText) === promptHead,
-      );
-    }
-    if (ownedPromptIndex < 0) continue;
+    if (!panel || panel.isConnected === false) throw new AssistantError('Assistant panel disappeared during owned round trip');
     const hostError = getHostError();
     if (hostError) throw new AssistantError(hostError);
-    if (nodes.length <= ownedPromptIndex + 1) continue;
-
-    const text = nodes[ownedPromptIndex + 1]?.innerText ?? '';
-    if (!text) continue;
-    if (promptHead && head(text) === promptHead) continue; // still looking at ours
+    const nodes = messageNodes(panel);
+    const matches = nodes.flatMap((node, index) => {
+      const text = String(node.innerText ?? '');
+      const matchesPrompt = requestMarker
+        ? head(text) === promptHead && text.split(/\r?\n/).filter(line => line.trim() === requestMarker).length === 1
+        : normalizedDisplay(text) === normalizedDisplay(prompt);
+      return index >= beforeCount && matchesPrompt ? [index] : [];
+    });
+    if (matches.length > 1) throw new AssistantError('Assistant prompt identity is ambiguous; no automatic resend');
+    // History can hydrate or remount after submission. Never keep an index
+    // pointing at an unrelated old exchange after its contents have changed.
+    if (ownedPromptIndex >= 0 && matches[0] !== ownedPromptIndex) {
+      throw new AssistantError('Assistant prompt identity changed during reply; no automatic resend');
+    }
+    ownedPromptIndex = matches[0] ?? -1;
+    const busy = assistantGenerationActive(panel);
+    const candidate = ownedPromptIndex >= 0 ? nodes[ownedPromptIndex + 1]?.innerText ?? '' : '';
+    const text = promptHead && head(candidate) === promptHead ? '' : candidate;
+    const changed = Boolean(text) && text !== lastText;
+    if (changed) { lastText = text; stable = 0; lastActivity = now(); }
+    // A busy status can extend only an acknowledged request, not an absent prompt.
+    if (busy && ownedPromptIndex >= 0) lastActivity = now();
+    if (now() - lastActivity >= timeoutMs) { expired = 'idle limit'; break; }
+    if (!text) { stable = 0; continue; }
     // Pin the displayed prompt once a response begins. The host may replace
     // its optimistic plain-text prompt with Markdown before generation starts.
     if (!promptAcknowledged) {
@@ -241,28 +422,26 @@ export async function waitForReply({
     // JSON document is indistinguishable from a malformed one at the parser.
     //
     //   law: stalled != finished
+    // A complete-looking JSON or a stable partial card list can still be streaming.
+    if (busy) { stable = 0; continue; }
     if (isComplete) {
       if (isComplete(text)) return text;
-      lastLen = text.length;
       continue;
     }
 
-    if (text.length === lastLen) {
+    if (!changed) {
       stable += 1;
       if (stable >= stableSamples) return text;
-    } else {
-      stable = 0;
-      lastLen = text.length;
     }
   }
   const progress = ownedPromptIndex < 0
     ? 'the submitted prompt was not observed in Assistant chat'
-    : lastLen < 0
+    : lastText === null
       ? 'the prompt appeared in Assistant chat, but no reply appeared'
       : 'a reply appeared, but it did not reach the required completion format';
   // Continue may mean a host generation failed or stopped; its presence alone
   // neither proves a retry is safe nor authorizes another model call.
-  throw new AssistantError(`no complete reply within ${timeoutMs}ms: ${progress}; no automatic resend`);
+  throw new AssistantError(`Assistant ${expired} reached (${now() - started}ms elapsed; ${timeoutMs}ms idle / ${maxWaitMs}ms maximum): ${progress}; inspect the saved chat for a late reply; no automatic resend`);
 }
 
 /**
@@ -287,46 +466,68 @@ export async function ask(prompt, opts = {}) {
   if (ownsLease) assistantLease = `assistant-${Date.now()}-${++transactionSequence}`;
   assistantCallActive = true;
   const doc = opts.doc ?? document;
-  const previousTab = activeTabName(doc);
+  const previousView = captureAssistantView(doc);
+  let panel = null;
   let composer = null;
   let sent = false;
   let hostStatus = null;
+  // The dialog may initially render empty and hydrate OLD messages later.
+  // A count plus a shared instruction prefix cannot identify this send.
+  // Keep the caller's opening intact (temporary mode pins it for cleanup),
+  // and append an opaque per-attempt line that survives Markdown rendering.
+  const requestMarker = `DGCE request identity ${crypto.randomUUID()}`;
+  const sentPrompt = `${prompt}\n\n${requestMarker}`;
 
   try {
-    if (!openAssistant(doc)) throw new AssistantError('Assistant tab not found');
+    if (!openAssistant(doc, previousView)) throw new AssistantError('Assistant tab not found');
 
-    composer = await awaitComposer({ doc, ...opts });
+    composer = await awaitComposer({ doc, ...opts, view: previousView });
     if (!composer) throw new AssistantError('Assistant composer did not appear');
     if (String(composerValue(composer) ?? '').length) {
       throw new AssistantError('Assistant composer contains a user draft; automation deferred');
     }
 
-    const panel = resolveAssistantPanel(doc);
+    panel = resolveAssistantPanel(doc);
     if (!panel) throw new AssistantError('Assistant panel not found');
-    const send = panel.querySelector(SELECTORS.send);
+    const readiness = await awaitAssistantSettled(panel, { ...opts.readinessOptions, doc });
+    composer = readiness.composer;
+    if (assistantGenerationActive(panel)) throw new AssistantError('Assistant is still generating; wait for its saved reply before starting another request');
+    if (assistantBlockingDialogs(doc, panel).length) throw new AssistantError('Another dialog is open; Assistant request deferred');
+    const send = unique([...panel.querySelectorAll(SELECTORS.send)].filter(visible));
     if (!send) throw new AssistantError('send button not found');
 
     const before = messageCount(panel);
-    setComposerValue(composer, prompt);
+    setComposerValue(composer, sentPrompt);
     await new Promise((r) => setTimeout(r, 150));
     if (resolveAssistantPanel(doc) !== panel) throw new AssistantError('Assistant panel changed before send');
-    if (composerValue(composer) !== prompt) {
+    if (findComposer(doc) !== composer || chatSnapshot(panel) !== readiness.snapshot) {
+      throw new AssistantError('Assistant history or composer changed during preparation; no request sent');
+    }
+    if (assistantBlockingDialogs(doc, panel).length) throw new AssistantError('Another dialog opened before send');
+    if (composerValue(composer) !== sentPrompt) {
       throw new AssistantError('Assistant composer changed before send; automation aborted');
     }
+    if (assistantGenerationActive(panel)) throw new AssistantError('Assistant began generating before send; request deferred');
     if (send.disabled) throw new AssistantError('send button is disabled');
 
     hostStatus = watchAssistantFailure(panel);
     send.click();
     sent = true;
-    return await waitForReply({ beforeCount: before, prompt, panel, ...opts, getHostError: hostStatus.getError });
+    return await waitForReply({ ...opts, beforeCount: before, prompt: sentPrompt, requestMarker, panel, getHostError: () => {
+      if (String(doc.location?.href ?? '').split('#')[0] !== previousView.route
+        || resolveAssistantPanel(doc) !== panel) return 'Assistant surface or session changed during the request; no automatic resend';
+      return hostStatus.getError();
+    } });
   } finally {
     hostStatus?.disconnect();
-    if (!sent && composer && composerValue(composer) === prompt) {
+    if (!sent && composer && composerValue(composer) === sentPrompt) {
       try { setComposerValue(composer, '', { allowReplace: true }); } catch { /* fail closed */ }
     }
-    assistantCallActive = false;
-    if (ownsLease) assistantLease = null;
-    if (previousTab && previousTab !== SELECTORS.tab) byText(previousTab, doc)?.click();
+    try { await restoreAssistantView(previousView, panel, doc); }
+    finally {
+      assistantCallActive = false;
+      if (ownsLease) assistantLease = null;
+    }
   }
 }
 
@@ -367,18 +568,18 @@ export async function withAssistantLease(task, { doc = document } = {}) {
  *
  *   law: observation != interaction
  *
- * The tab button's existence is the only real precondition: `ask()` opens the
- * panel and waits for the composer itself. The send button is NOT a signal —
- * it stays in the DOM even while the Assistant panel is closed.
+ * A visible exact launcher or supported Assistant surface is the precondition.
+ * The send button alone is not a signal: hidden legacy panels retain it.
  */
 export function probe() {
   const tab = byText(SELECTORS.tab);
+  const available = Boolean(resolveAssistantPanel() || unique([...document.querySelectorAll('button[aria-label="Open Writing Assistant"]')].filter(visible)) || visible(tab));
   return {
     tab: Boolean(tab),
     activeTab: activeTabName(),
     composerVisibleNow: Boolean(findComposer()),
     messages: messageCount(),
-    ready: Boolean(tab),
+    ready: available,
   };
 }
 
@@ -418,7 +619,7 @@ export async function clearChat({ explicit = false, doc = document, timeoutMs = 
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
     await new Promise((r) => setTimeout(r, 50));
-    if (doc.querySelector?.('[role="dialog"]')) return false;
+    if (assistantBlockingDialogs(doc, panel).length) return false;
     if (before > 0 && messageCount(panel) === 0) return true;
   }
   return false;
@@ -429,18 +630,20 @@ export async function clearChat({ explicit = false, doc = document, timeoutMs = 
  */
 export async function ensureHeadroom(
   needTokens,
-  { windowTokens = 128000, reserve = 0.25, doc = document, _lease = null } = {},
+  { windowTokens = 128000, reserve = 0.25, doc = document, _lease = null, readinessOptions = {} } = {},
   ) {
   if (assistantCallActive || (assistantLease && _lease !== assistantLease)) throw new AssistantHeadroomError('Assistant automation is already active');
-  const previousTab = activeTabName(doc);
+  const previousView = captureAssistantView(doc);
+  let panel = null;
   try {
     if (!resolveAssistantPanel(doc)) {
-      if (!openAssistant(doc)) throw new AssistantHeadroomError('Assistant tab not found');
-      const composer = await awaitComposer({ doc });
+      if (!openAssistant(doc, previousView)) throw new AssistantHeadroomError('Assistant tab not found');
+      const composer = await awaitComposer({ doc, view: previousView });
       if (!composer) throw new AssistantHeadroomError('Assistant panel did not appear');
     }
-    const panel = resolveAssistantPanel(doc);
+    panel = resolveAssistantPanel(doc);
     if (!panel) throw new AssistantHeadroomError('Assistant panel not found');
+    await awaitAssistantSettled(panel, { ...readinessOptions, doc });
     const usable = Math.floor(windowTokens * (1 - reserve));
     const before = chatSizeTokens(panel);
     const headroom = usable - before - needTokens;
@@ -451,6 +654,6 @@ export async function ensureHeadroom(
     }
     return { cleared: false, before, after: before, headroom };
   } finally {
-    if (previousTab && previousTab !== SELECTORS.tab) byText(previousTab, doc)?.click();
+    await restoreAssistantView(previousView, panel, doc);
   }
 }

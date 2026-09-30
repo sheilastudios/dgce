@@ -55,7 +55,7 @@ import {
   watchExternalWrites,
   writeWithConflictRetry,
 } from '../storage.js';
-import { buildInjection, stripInjections, stripRecordedInjection, semanticInjectionText, augmentTurn, makeInjectionRecord } from '../core/injection.js';
+import { buildInjection, stripInjections, stripRecordedInjection, semanticInjectionText, augmentTurn, makeInjectionRecord, wrapInjection } from '../core/injection.js';
 import { canonicalSha256 } from '../core/canonical-json.js';
 import { stageForNextTurn } from '../core/archivist-input.js';
 import { drawCard } from '../core/deck.js';
@@ -105,6 +105,8 @@ import {
 import { COMPOSER_SELECTOR, setComposerText } from '../host/command-palette.js';
 import { readAuthoredEntities, findAuthored, authoredNames } from '../host/scenario.js';
 import { loadedInteractionRoots, hasHistoryCompletenessWitness, armHistoryLocalSend, invalidateHistoryContinuity, attestEmptySessionHistory, canAttestEmptySessionHistory } from '../host/builder-transcript.js';
+import { captureOpeningSessionHistory, openingSessionHistoryMatches, attestOpeningSessionHistory } from '../host/builder-transcript.js';
+import { settleHistoryContinuity, historyContinuityScope, historyContinuityDiagnostics, historyLoadControl } from '../host/builder-transcript.js';
 import { SESSION_READBACK } from '../host/session-readback.js';
 import { plainOrdinaryBinding, matchesPlainOrdinaryBinding, completePlainOrdinaryReadback } from '../host/ordinary-readback.js';
 
@@ -133,6 +135,7 @@ const state = {
   packErrors: null,
   packSample: null,
   assistantBusy: false,
+  deckRefill: null,
   archivistBusy: false,
   archivistStatus: null,
   injectionPruneBusy: false,
@@ -288,7 +291,10 @@ export function mountPanel() {
 
   // One capture-phase activity clock for the lifetime of this content script.
   // Installing these from planInjection stacked three listeners every turn.
-  const noteUserActivity = () => { state.lastUserInputAt = Date.now(); };
+  const noteUserActivity = () => {
+    state.lastUserInputAt = Date.now();
+    scheduleArchivistRecheck();
+  };
   document.addEventListener('keydown', noteUserActivity, true);
   document.addEventListener('input', noteUserActivity, true);
   document.addEventListener('pointerdown', noteUserActivity, true);
@@ -375,6 +381,9 @@ async function prepareOrdinarySubmission(text, unchanged) {
   current();
   if (!base || mechanicalBasis(base) !== mechanicalBasis(state.ws)) throw new Error('Workspace changed before preparation. Reload before sending.');
   const generation = state.mutationGeneration;
+  await refreshFreeHistoryContinuity();
+  current();
+  if (!unchanged() || state.mutationGeneration !== generation) throw new Error('Turn changed during history settlement. Draft preserved.');
   const candidate = structuredClone(base);
   const priorBanner = state.banner;
   let result, injection, preparedBanner;
@@ -439,7 +448,8 @@ function noteNativeRelease({ ordinaryId = null, nonce = null, outgoingText }) {
   const epoch = state.epoch;
   recordNativeRelease(state.ws, receipt);
   // Rejected release evidence must not arm a history lease for an unclicked turn.
-  if (visible.status === 'matched') armHistoryLocalSend(document, { id: ordinaryId ?? nonce, visibleText: visible.text });
+  if (visible.status === 'matched') armHistoryLocalSend(document, { id: ordinaryId ?? nonce, visibleText: visible.text,
+    carrierText: record ? wrapInjection(record.body, record.nonce) : null });
   markLocalMutation();
   state.persistenceQueue.enqueue(ws => { recordNativeRelease(ws, receipt); return ws; })
     .then(saved => adoptQueuedWrite(saved, epoch))
@@ -461,14 +471,43 @@ function observeBrowserRequest(message) {
     .catch(error => reportQueuedWriteFailure(error, epoch, 'Browser request observation'));
 }
 
+// One trailing wake per activity/settlement burst, not a polling or retry loop.
+// The last DOM mutation may precede our cleanup/readback busy flag clearing.
+// Recheck after the input guard too; otherwise a due run can remain stranded.
+function scheduleArchivistRecheck(delayMs = 1000) {
+  if (!state.ws || !state.store) return;
+  if (state.archivistWake) clearTimeout(state.archivistWake.timer);
+  const wake = { epoch: state.epoch, timer: null };
+  state.archivistWake = wake;
+  wake.timer = setTimeout(() => {
+    if (state.archivistWake !== wake) return;
+    state.archivistWake = null;
+    if (isCurrent(wake.epoch)) {
+      scheduleFreeHistoryRecovery();
+      maybeScheduledArchivist();
+    }
+  }, delayMs);
+}
+
 function maybeScheduledArchivist() {
   if (!state.ws || !state.store) return;
-  if (!archivistDue(state.ws)) return;
+  if (!archivistDue(state.ws) || !authoritativeInjectionAllowed(state.ws)) return;
 
   // One Assistant, two callers. Deck replenish fires 2s behind the same turn
   // and takes 10-20s; starting the Archivist on top of it would interleave two
   // conversations in one chat.
   if (state.archivistBusy || state.assistantBusy || state.injectionPruneBusy) return;
+
+  // A four-second timer is not a settled turn. Readback can still retire the
+  // pending action, and cleanup can still commit a revision after that timer.
+  // Wait rather than building a prompt that our own delivery writes invalidate.
+  // The history observer rechecks this gate after settlement; no cadence is
+  // spent while deferred, and runArchivist keeps its exact freshness checks.
+  if (state.ws.ordinary_pending || state.freeReadback?.busy
+      || state.carrierHygieneStatus !== 'clean'
+      || (state.ws.injections ?? []).some(record => !record.pruned)) return;
+  if (!roleplayEditorIdle(document, { lastUserInputAt: state.lastUserInputAt,
+    guardWindowMs: 750, allowFocusedEmptyComposer: true })) return;
 
   // Never archive a story we have already left.
   if (workspaceIdFromLocation() !== state.ws.workspace_id) return;
@@ -544,6 +583,10 @@ function observeOwnedCarriersInHost() {
     .filter((record) => !record.pruned && presentNonces.has(record.nonce)
       && (!(record.mechanical_action_id || record.ordinary_action_id) || record.request_id));
   void verifyFreeOrdinaryReadback();
+  const observedEpoch = state.epoch;
+  void refreshFreeHistoryContinuity().then(() => {
+    if (isCurrent(observedEpoch)) scheduleArchivistRecheck();
+  });
   if (!present.length) return;
 
   // Mutation scans continue while DreamGen streams a response. Re-arm the
@@ -711,7 +754,7 @@ async function runRecurringInjectionPrune({ automatic = false } = {}) {
     state.carrierHygieneCount = (sweep.remaining ?? []).length;
     state.carrierHygieneVerifiedAt = sweep.status === 'clean' ? new Date().toISOString() : null;
     state.carrierHygieneReason = sweep.status === 'clean'
-      ? `${sweep.history?.scope === 'user_attested_empty_session' ? 'User-attested empty-session origin (not automatic completeness proof); subsequent mounted continuity checked' : 'Supported-host history checked'}: ${sweep.interaction_count ?? 0} mounted interactions contain no context carriers.${sweep.accepted_legacy_nonces?.length ? ` User accepted unresolved history for ${sweep.accepted_legacy_nonces.length} legacy records; their delivery and removal remain unverified.` : ''}${sweep.accepted_modern_cleanup_nonces?.length ? ` User accepted unresolved cleanup for ${sweep.accepted_modern_cleanup_nonces.length} already-reconciled modern records; removal remains unverified.` : ''}`
+      ? `${sweep.history?.scope === 'user_attested_scenario_opening' ? 'User-attested scenario-opening origin (not automatic completeness proof); subsequent mounted continuity checked' : sweep.history?.scope === 'user_attested_empty_session' ? 'User-attested empty-session origin (not automatic completeness proof); subsequent mounted continuity checked' : 'Supported-host history checked'}: ${sweep.interaction_count ?? 0} mounted interactions contain no context carriers.${sweep.accepted_legacy_nonces?.length ? ` User accepted unresolved history for ${sweep.accepted_legacy_nonces.length} legacy records; their delivery and removal remain unverified.` : ''}${sweep.accepted_modern_cleanup_nonces?.length ? ` User accepted unresolved cleanup for ${sweep.accepted_modern_cleanup_nonces.length} already-reconciled modern records; removal remains unverified.` : ''}`
       : sweep.status === 'history_unverified'
         ? sweep.history_issue === 'carrier_retirement_unverified'
           ? `Supported-host Load all cycle checked ${sweep.interaction_count ?? 0} interactions, but ${sweep.unverified_record_nonces?.length ?? 0} potentially sent carrier record(s) lack verified removal evidence. History absence alone cannot retire them. New DGCE context remains blocked.`
@@ -760,6 +803,7 @@ async function runRecurringInjectionPrune({ automatic = false } = {}) {
       state.injectionPruneBusy = false;
       state.injectionPruneStatus = null;
       render();
+      scheduleArchivistRecheck();
     }
   }
 }
@@ -971,6 +1015,7 @@ async function load() {
   state.resolveResult = null;
   state.banner = null;
   state.assistantBusy = false;
+  state.deckRefill = null;
   state.archivistBusy = false;
   state.archivistStatus = null;
   state.injectionPruneBusy = false;
@@ -1127,7 +1172,10 @@ async function commit(mutator, { note, retryConflict = false, requireLock = fals
 
 function render() {
   const drawer = root.getElementById('drawer');
-  if (!drawer || drawer.hidden) return;
+  if (!drawer) return;
+  // An update while dismissed invalidates the preserved DOM. Reopening must
+  // show current delivery/history state, not an earlier successful snapshot.
+  if (drawer.hidden) { dismissedDrawer = null; return; }
   dismissedDrawer = null;
   const focused = root.activeElement;
   const reviewInput = drawer.querySelector('textarea[data-dgce-attestation]');
@@ -2134,6 +2182,23 @@ function deckTab() {
       style: 'min-height:70px',
     });
 
+    const refill = state.deckRefill;
+    if (refill) out.push(el('section', {},
+      el('h2', {}, 'Latest Assistant refill'),
+      el('p', { class: refill.phase === 'failed' ? 'banner warn' : 'empty' }, refill.message),
+      el('p', { class: 'empty' }, 'Page-local status. Saved Assistant chat is retained; no automatic resend after failure.'),
+      refill.reply ? el('button', { class: 'act', onclick: () => {
+        paste.value = refill.reply;
+        paste.focus();
+      } }, 'Use saved reply for review') : null,
+      refill.phase === 'failed' ? el('button', { class: 'act', onclick: () => {
+        if (state.assistantBusy || state.archivistBusy) return;
+        if (!confirm('Review the saved Assistant chat for a late reply first. Allow a new refill request on this page? This does not resend the old request or apply its reply.')) return;
+        state.deckRefill = null;
+        render();
+      } }, 'Reviewed prior attempt; allow new refill') : null,
+    ));
+
     out.push(
       el(
         'section',
@@ -2157,46 +2222,7 @@ function deckTab() {
             'button',
             {
               class: 'act shrink',
-              onclick: async () => {
-                if (state.assistantBusy || state.archivistBusy || state.ws?.ordinary_pending) return;
-                state.assistantBusy = true;
-                const epoch = state.epoch;
-                state.banner = { kind: 'info', text: 'Asking the Assistant…' };
-                render();
-                try {
-                  const reply = await askAssistant(renderReplenishPrompt(deck, {
-                    knownNames, establishedActors, genreProfile, dynamicsProfile,
-                  }));
-                  if (!isCurrent(epoch)) return; // switched role-play mid-request
-                  const found = parseProposedCards(reply);
-                  if (!found.length) {
-                    state.banner = {
-                      kind: 'warn',
-                      text: 'The Assistant replied but no cards were found. Its reply is in the Assistant tab.',
-                    };
-                    render();
-                    return;
-                  }
-                  await commitDeck((ws) => proposeCards(ws.deck, found, { turn: ws.current_turn }), {
-                    note:
-                      deck.mode === 'assisted_auto'
-                        ? `${found.length} cards added.`
-                        : `${found.length} cards queued for review.`,
-                  });
-                } catch (e) {
-                  if (!isCurrent(epoch)) return;
-                  state.banner = {
-                    kind: 'bad',
-                    text:
-                      e instanceof AssistantError
-                        ? `Could not drive the Assistant: ${e.message}. Use Copy prompt instead.`
-                        : e.message,
-                  };
-                  render();
-                } finally {
-                  state.assistantBusy = false;
-                }
-              },
+              onclick: () => requestDeckRefill(),
             },
             'Ask the Assistant',
           ),
@@ -2234,7 +2260,7 @@ function deckTab() {
             'button',
             {
               class: 'act shrink',
-              onclick: () => {
+              onclick: async () => {
                 const found = parseProposedCards(root.getElementById('deck-paste').value);
                 if (!found.length) {
                   state.banner = {
@@ -2244,7 +2270,8 @@ function deckTab() {
                   render();
                   return;
                 }
-                commitDeck(
+                const epoch = state.epoch;
+                const saved = await commitDeck(
                   (ws) => {
                     const res = proposeCards(ws.deck, found, { turn: ws.current_turn });
                     state.lastProposal = res;
@@ -2256,6 +2283,10 @@ function deckTab() {
                         : `${found.length} cards queued for review.`,
                   },
                 );
+                if (isCurrent(epoch) && saved?.ok) {
+                  state.deckRefill = null;
+                  render();
+                }
               },
             },
             'Add from reply',
@@ -2288,6 +2319,9 @@ function deckTab() {
             (needsReplenish(deck) ? ' · running low' : ''),
         ),
       ),
+      el('p', { class: 'empty' },
+        'Anchor keeps a card from being replaced when new cards fill the deck. It does not force a draw ' +
+        'or make the event mandatory. An anchored card is still consumed when drawn.'),
       el('div', { class: 'row' }, input, el('button', { class: 'act shrink', onclick: add }, 'Add')),
       ...(deck.cards.length
         ? deck.cards.map((card) =>
@@ -2307,6 +2341,7 @@ function deckTab() {
                   'button',
                   {
                     class: 'act',
+                    title: 'Protect from replacement, not from being drawn and consumed. Does not force the event.',
                     onclick: () => {
                       try {
                         commitDeck((ws) => setDeckAnchored(ws.deck, card.text, !card.anchored));
@@ -2327,12 +2362,6 @@ function deckTab() {
             ),
           )
         : [el('p', { class: 'empty' }, 'No cards yet.')]),
-      el(
-        'p',
-        { class: 'empty' },
-        'Anchoring protects a card from being pushed out by newer ones. It does not ' +
-          'protect it from being drawn — a card that survived its own draw would repeat.',
-      ),
     ),
   );
 
@@ -2348,29 +2377,53 @@ function maybeReplenishDeck() {
   if (state.archivistBusy) return;
   if (!probeAssistant().ready) return;
 
-  state.assistantBusy = true;
-  // An Assistant round trip takes 10-20s and fires 2s after a turn — switching
-  // role-plays in that window is ordinary. Without this guard the cards from
-  // one story land in another story's deck.
-  const epoch = state.epoch;
-  const { knownNames, establishedActors, genreProfile, dynamicsProfile } = freeDeckContext(state.ws);
+  return requestDeckRefill();
+}
 
-  askAssistant(renderReplenishPrompt(deck, {
-    knownNames, establishedActors, genreProfile, dynamicsProfile,
-  }))
-    .then((reply) => {
-      if (!isCurrent(epoch)) return; // these cards belong to a story we left
-      const found = parseProposedCards(reply);
-      if (!found.length) return;
-      return commitDeck((ws) => proposeCards(ws.deck, found, { turn: ws.current_turn }));
-    })
-    .catch(() => {
-      // Silent. A failed background refill leaves the deck short, which the
-      // Deck tab already shows as "running low". It must never interrupt play.
-    })
-    .finally(() => {
-      state.assistantBusy = false;
+async function requestDeckRefill() {
+  if (editionWorkspaceIssue(state.ws) || !state.ws || state.ws.ordinary_pending
+    || state.assistantBusy || state.archivistBusy || !deckAssisted(state.ws.deck)) return;
+  // A failed request may still have a late host reply. Do not quietly request
+  // another batch next turn; retain the reply/reason until explicit review.
+  if (state.deckRefill?.phase === 'failed') return;
+  const deck = state.ws.deck;
+  state.assistantBusy = true;
+  const epoch = state.epoch;
+  const mode = deck.mode;
+  const receipt = { phase: 'waiting', reply: null,
+    message: 'Waiting for Assistant cards; thinking and streaming may take several minutes.' };
+  state.deckRefill = receipt;
+  render();
+  const { knownNames, establishedActors, genreProfile, dynamicsProfile } = freeDeckContext(state.ws);
+  try {
+    const reply = await askAssistant(renderReplenishPrompt(deck, {
+      knownNames, establishedActors, genreProfile, dynamicsProfile,
+    }));
+    if (!isCurrent(epoch)) return;
+    receipt.reply = reply;
+    const found = parseProposedCards(reply);
+    if (!found.length) throw new Error('Assistant replied, but no usable cards were found. Review its saved reply.');
+    let proposal;
+    const saved = await commitDeck(ws => {
+      if (ws.deck.mode !== mode) throw new Error('Deck mode changed while waiting. Review the saved reply before adding cards.');
+      proposal = proposeCards(ws.deck, found, { turn: ws.current_turn });
     });
+    if (!isCurrent(epoch)) return;
+    if (!saved?.ok) throw saved?.error ?? new Error('The refill was not confirmed saved. Review the current deck and saved reply.');
+    receipt.phase = 'applied';
+    receipt.reply = null;
+    receipt.message = `${proposal.accepted.length} cards added; ${proposal.queued.length} queued for review.`;
+  } catch (error) {
+    if (!isCurrent(epoch)) return;
+    receipt.phase = 'failed';
+    receipt.message = `Refill not completed: ${error.message}. No automatic resend. ${receipt.reply ? 'Reply retained on this page for review.' : 'Inspect Assistant chat for a late reply.'}`;
+  } finally {
+    if (isCurrent(epoch)) {
+      state.assistantBusy = false;
+      render();
+      scheduleArchivistRecheck();
+    }
+  }
 }
 
 function continuityToolsSection() {
@@ -2528,6 +2581,7 @@ async function verifyFreeOrdinaryReadback() {
     if (current()) attempt.status = 'readback_unavailable';
   } finally {
     attempt.busy = false;
+    if (current()) scheduleArchivistRecheck();
     if (current() && attempt.attempts < 6) setTimeout(() => {
       if (current()) void verifyFreeOrdinaryReadback();
     }, 5000);
@@ -2574,6 +2628,7 @@ async function verifyFreePlainOrdinaryReadback() {
     if (current()) attempt.status = 'readback_unavailable';
   } finally {
     attempt.busy = false;
+    if (current()) scheduleArchivistRecheck();
     if (current() && attempt.attempts < 6) setTimeout(() => {
       if (current()) void verifyFreePlainOrdinaryReadback();
     }, 5000);
@@ -2612,7 +2667,9 @@ function body() {
   const legacy = (state.legacyRecoveryNonces ?? []).filter(nonce => !(state.ws.injections ?? []).some(r => r.nonce === nonce && r.ordinary_action_id));
   if (legacy.length) main.append(legacyCarrierRecoverySection(legacy));
   for (const nonce of (state.legacyRecoveryNonces ?? []).filter(n => !legacy.includes(n))) main.append(modernCarrierRecoverySection(nonce));
-  if (state.ws.current_turn === 0 && !state.ws.ordinary_pending && !(state.ws.injections?.length)) main.append(emptySessionSection());
+  if (state.ws.current_turn === 0 && !state.ws.ordinary_pending && !(state.ws.injections?.length)) {
+    main.append(loadedInteractionRoots(document).length ? openingSessionSection() : emptySessionSection());
+  }
   const view = { Memory: memoryTab, People: () => cardsTab('npc'), Places: () => cardsTab('location'),
     Events: () => cardsTab('event'), Objects: () => cardsTab('object'), Resolve: resolveTab, Campaign: () => previewTab('Campaign'),
     Deck: deckTab, RNG: () => previewTab('RNG'), Schedules: schedulesTab,
@@ -2622,6 +2679,68 @@ function body() {
   main.append(el('p', { class: 'disclosure' }, 'Memory is local to this extension and browser profile. Export it regularly. DGCE is not a DreamGen transcript backup. Cleanup removes only recorded extension-owned context, never story prose. Request evidence and your attestations do not prove model consumption.'));
   return main;
 }
+async function refreshFreeHistoryContinuity() {
+  const ws = state.ws, epoch = state.epoch, workspaceId = ws?.workspace_id;
+  const eligible = () => isCurrent(epoch) && state.ws === ws
+    && workspaceIdFromLocation() === workspaceId && !editionWorkspaceIssue(ws)
+    && !ws.timeline_integrity?.desynchronized && !state.injectionPruneBusy
+    && ['clean', 'history_unverified'].includes(state.carrierHygieneStatus)
+    && !(ws.injections ?? []).some(record => !record.pruned);
+  if (!ws || !eligible()) return false;
+  if (state.freeHistoryRefresh?.epoch === epoch) return state.freeHistoryRefresh.promise;
+  const attempt = { epoch };
+  state.freeHistoryRefresh = attempt;
+  attempt.promise = (async () => {
+    try {
+      const complete = await settleHistoryContinuity(document);
+      if (!eligible() || state.freeHistoryRefresh !== attempt) return false;
+      const carriers = discoverOwnedInjectionCarriers(document);
+      const clean = complete && hasHistoryCompletenessWitness(document) && carriers.length === 0;
+      const status = clean ? 'clean' : 'history_unverified';
+      const count = loadedInteractionRoots(document).length;
+      const scope = historyContinuityScope(document);
+      const reason = clean
+        ? `${scope.startsWith('user_attested_') ? 'User-attested origin (not automatic completeness proof)' : 'Previously witnessed history'}; mounted continuity checked: ${count} interactions, no context carriers.`
+        : 'Current history continuity is unverified. No new DGCE context will be injected until a supported history check succeeds.';
+      if (state.carrierHygieneStatus !== status || state.carrierHygieneReason !== reason) {
+        state.carrierHygieneStatus = status;
+        state.carrierHygieneReason = reason;
+        state.carrierHygieneVerifiedAt = clean ? new Date().toISOString() : null;
+        render();
+      }
+      if (!clean) scheduleFreeHistoryRecovery();
+      return clean;
+    } catch {
+      if (eligible()) {
+        state.carrierHygieneStatus = 'history_unverified';
+        state.carrierHygieneVerifiedAt = null;
+        state.carrierHygieneReason = 'History continuity check failed. No new context clearance granted.';
+        render();
+      }
+      return false;
+    } finally {
+      if (state.freeHistoryRefresh === attempt) state.freeHistoryRefresh = null;
+    }
+  })();
+  return attempt.promise;
+}
+function scheduleFreeHistoryRecovery() {
+  const ws = state.ws, epoch = state.epoch;
+  if (!ws || workspaceIdFromLocation() !== ws.workspace_id || editionWorkspaceIssue(ws)
+      || ws.timeline_integrity?.desynchronized || ws.ordinary_pending || state.freeReadback?.busy
+      || state.injectionPruneBusy || state.archivistBusy || state.assistantBusy || state.dirty?.size
+      || state.carrierHygieneStatus !== 'history_unverified'
+      || (ws.injections ?? []).some(record => !record.pruned)
+      || !roleplayEditorIdle(document, { lastUserInputAt: state.lastUserInputAt })) return;
+  const control = historyLoadControl(document);
+  if (!control) return;
+  const previous = state.freeHistoryRecovery;
+  // One attempt per settled turn/control, not an observer-driven retry loop.
+  if (previous?.epoch === epoch && previous.workspaceId === ws.workspace_id
+      && previous.turn === ws.current_turn && previous.control === control) return;
+  state.freeHistoryRecovery = { epoch, workspaceId: ws.workspace_id, turn: ws.current_turn, control };
+  scheduleRecurringInjectionPrune(epoch, 0, true);
+}
 function debugTab() {
   return [el('section', {}, el('h2', {}, 'Continuity diagnostics'),
     el('p', {}, `Build ${document.getElementById('dgce-root')?.dataset.dgceBuild ?? 'unknown'} · turn ${state.ws.current_turn}`),
@@ -2630,7 +2749,9 @@ function debugTab() {
     el('pre', {}, JSON.stringify({ latestAttempt: state.debugAttempt, latestCarrier: state.ws.injections?.[0] ?? null,
       savedInteractionReadback: state.freeReadback ?? null,
       latestPlainDelivery: state.ws.last_ordinary_delivery ?? null,
-      timeline: state.ws.timeline_integrity, emptySessionAttestation: state.ws.free_empty_session_attestation ?? null }, null, 2)))];
+      timeline: state.ws.timeline_integrity, emptySessionAttestation: state.ws.free_empty_session_attestation ?? null,
+      openingSessionAttestation: state.ws.free_opening_session_attestation ?? null,
+      historyContinuity: historyContinuityDiagnostics(document) }, null, 2)))];
 }
 async function copyBackup() {
   await navigator.clipboard.writeText(exportToJSON(state.ws));
@@ -2700,6 +2821,56 @@ async function restoreContinuityBackup(json, mode) {
   finally { restoreBusy = false; if (isCurrent(epoch)) render(); }
 }
 let emptySessionBusy = false;
+function openingSessionSection() {
+  const audit = state.ws.free_opening_session_attestation;
+  if (audit?.kind === 'user_attested_scenario_opening' && audit.route === document.location.pathname
+      && hasHistoryCompletenessWitness(document)) {
+    return el('section', { class: 'card', role: 'status' }, el('h3', {}, 'Scenario opening confirmed for this page'),
+      el('p', {}, 'Your testimony is recorded, not automatic completeness proof. No need to confirm again on this page. Reloading ends this clearance.'));
+  }
+  return el('section', { class: 'card' }, el('h3', {}, 'New session with a scenario opening?'),
+    el('p', {}, 'Confirm only if you created this session and its only interactions are the preloaded scenario opening. Do not use for an existing, played, edited, or imported transcript. This is your testimony, not automatic history proof; clearance ends on reload.'),
+    el('button', { class: 'act', disabled: emptySessionBusy, onclick: event => {
+      if (event.isTrusted) confirmOpeningSession();
+    } }, 'Confirm only scenario opening'));
+}
+async function confirmOpeningSession() {
+  if (emptySessionBusy) return;
+  emptySessionBusy = true;
+  const epoch = state.epoch, route = document.location.pathname;
+  let snapshot;
+  const eligible = ws => {
+    assertEditionWorkspace(ws);
+    if (!isCurrent(epoch) || document.location.pathname !== route
+        || !ws || ws.current_turn !== 0 || ws.ordinary_pending || ws.injections?.length
+        || ws.timeline_integrity?.desynchronized || state.archivistBusy || state.injectionPruneBusy
+        || !roleplayEditorIdle(document) || !openingSessionHistoryMatches(document, snapshot)) {
+      throw new Error('Session or opening changed, or recovery is pending. No history clearance granted.');
+    }
+  };
+  try {
+    await state.persistenceQueue?.whenIdle();
+    if (!isCurrent(epoch)) return;
+    snapshot = captureOpeningSessionHistory(document, route);
+    eligible(state.ws);
+    const fence = captureWorkspaceFence(state.ws, state.mutationGeneration);
+    if (!confirm(`I created this new session. These ${snapshot.roots.length} interactions are its entire preloaded scenario opening; I have not played, edited, or imported transcript history here. DGCE cannot independently prove this. Record my testimony for this page only? No history will be changed.`)) return;
+    if (!workspaceFenceMatches(fence, state.ws, state.mutationGeneration)) throw new Error('Workspace changed during confirmation. Nothing cleared.');
+    eligible(state.ws);
+    const result = await commit(ws => {
+      eligible(state.ws); eligible(ws);
+      ws.free_opening_session_attestation = { kind: 'user_attested_scenario_opening', route,
+        count: snapshot.roots.length, snapshotHash: canonicalSha256(snapshot.texts).hash,
+        at: new Date().toISOString() };
+    }, { requireLock: true });
+    if (!result.ok || !isCurrent(epoch) || document.location.pathname !== route) return;
+    eligible(state.ws);
+    if (!attestOpeningSessionHistory(document, snapshot)) throw new Error('Host changed after recording testimony. No clearance granted.');
+    state.banner = { kind: 'info', text: 'Scenario-opening testimony recorded, not automatic history proof. No story changed. You may begin normally; reloading ends this page-local clearance.' };
+    scheduleRecurringInjectionPrune(epoch, 0, true);
+  } catch (error) { if (isCurrent(epoch)) state.banner = { kind: 'warn', text: error.message }; }
+  finally { emptySessionBusy = false; if (isCurrent(epoch)) render(); }
+}
 function emptySessionSection() {
   const attestation = state.ws.free_empty_session_attestation;
   if (attestation?.kind === 'user_attested_empty_session'

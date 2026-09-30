@@ -12,7 +12,7 @@ import { WorkspaceStore } from '../extension/storage.js';
 import { commitOrdinaryTurn, cancelUnsentOrdinaryTurn } from '../extension/host/ordinary-turn.js';
 import { campaignDeckContext } from '../extension/core/entity-authority.js';
 const panel = readFileSync(new URL('../extension/ui/panel.js', import.meta.url), 'utf8');
-const extract = name => { const at = panel.indexOf(`function ${name}(`); assert.ok(at >= 0, name); return panel.slice(at, panel.indexOf('\n}', at) + 2); };
+const extract = name => { const at = panel.indexOf(`function ${name}(`); assert.ok(at >= 0, name); return panel.slice(panel.slice(at - 6, at) === 'async ' ? at - 6 : at, panel.indexOf('\n}', at) + 2); };
 function fixture() {
   const ws = createWorkspace({ workspace_id: 'free-deck' });
   deck.setMode(ws.deck, 'manual');
@@ -99,7 +99,7 @@ test('Free assembled Deck tab is active and Assistant refill waits for other wor
     const ws = fixture(); deck.setMode(ws.deck, 'assisted_auto');
     const state = { ws, [flag]: true };
     if (flag === 'ordinary_pending') ws.ordinary_pending = { id: 'pending' };
-    runInNewContext(`${extract('maybeReplenishDeck')}\nmaybeReplenishDeck()`, {
+    runInNewContext(`${extract('requestDeckRefill')}\n${extract('maybeReplenishDeck')}\nmaybeReplenishDeck()`, {
       ...edition, state, deckAssisted: deck.isAssisted, needsReplenish: deck.needsReplenish,
       probeAssistant: () => assert.fail('Must not reach Assistant while busy or pending'),
     });
@@ -135,8 +135,12 @@ test('Free Deck controls render all four modes and manual add, anchor and review
   }
   deck.setMode(ws.deck, 'manual');
   let rows = controls(render()); ids.get('deck-new').value = 'A kettle whistles in the next room.';
+  assert.ok(rows.some(node => node.children.some(child => typeof child === 'string' && child.startsWith('Anchor keeps a card'))));
   rows.find(node => node.children.includes('Add')).onclick();
-  rows = controls(render()); rows.find(node => node.children.includes('Anchor')).onclick();
+  rows = controls(render());
+  const anchor = rows.find(node => node.children.includes('Anchor'));
+  assert.match(anchor.title, /not from being drawn and consumed/);
+  anchor.onclick();
   assert.equal(ws.deck.cards.find(card => card.text.startsWith('A kettle')).anchored, true);
   deck.setMode(ws.deck, 'assisted_review'); deck.proposeCards(ws.deck, 'The clerk opens a ledger.');
   rows = controls(render()); rows.find(node => node.children.includes('Accept')).onclick();
@@ -156,14 +160,16 @@ test('Free background refill admits only in the original session and respects re
     const ws = fixture(); deck.setMode(ws.deck, 'assisted_review');
     const state = { ws, epoch: 1 };
     let answer;
-    runInNewContext(`${extract('maybeReplenishDeck')}\nmaybeReplenishDeck()`, {
+    runInNewContext(`${extract('requestDeckRefill')}\n${extract('maybeReplenishDeck')}\nmaybeReplenishDeck()`, {
       ...edition, state, deckAssisted: deck.isAssisted, needsReplenish: deck.needsReplenish,
       probeAssistant: () => ({ ready: true }), freeDeckContext: () => ({ knownNames: ['Porter'] }),
       renderReplenishPrompt: deck.renderReplenishPrompt,
       askAssistant: () => new Promise(resolve => { answer = resolve; }), isCurrent: epoch => epoch === state.epoch,
-      parseProposedCards: deck.parseProposedCards, proposeCards: deck.proposeCards, commitDeck: fn => fn(ws),
+      render() {}, parseProposedCards: deck.parseProposedCards, proposeCards: deck.proposeCards,
+      scheduleArchivistRecheck() { assert.equal(state.assistantBusy, false); },
+      commitDeck: fn => { fn(ws); return { ok: true }; },
     });
-    if (stale) state.epoch++;
+    if (stale) { state.epoch++; state.assistantBusy = false; }
     answer('CARD: The porter checks the loading-bay bell.');
     await new Promise(resolve => setImmediate(resolve));
     assert.equal(ws.deck.pending.length, stale ? 0 : 1);

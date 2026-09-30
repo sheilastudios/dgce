@@ -1,81 +1,40 @@
 {
-  "schema_version": 1,
-  "package": "QE-The-Waykey-public-demo-r1",
-  "date": "2026-09-26",
-  "scope": "Demo only; no extension runtime or replacement repository metadata.",
-  "source": "QE_The_Waykey_SCENARIO_v1.md, 2026-09-23",
-  "new_live_playtest": false,
-  "exclusion": "Manifest excludes itself; ZIP hash binds the full artifact.",
+  "schema": 3,
+  "package": "QE-The-Waykey-expanded-demo-r3",
+  "date": "2026-09-30",
+  "livePlaytestScope": "focused-private-clone-not-end-to-end",
+  "stableReleaseApproved": false,
+  "excludes": "Manifest excludes itself; any external ZIP SHA must bind all members.",
   "files": [
     {
       "path": "DEMO-STATUS.md",
-      "bytes": 3415,
-      "sha256": "4b484b640ea5157a93f0f09b154fbf703a2cd92179854e213f88fd90b1462982"
+      "bytes": 2268,
+      "sha256": "90a43d0f947e56027151279e3131e2699d3ba9b670dc35df644ebf2e18b8cecc"
     },
     {
       "path": "README.md",
-      "bytes": 7828,
-      "sha256": "5eb9c601149c45f3e62f01b19094650f58b09cd6dbce36ba31f1fb1253e53bed"
+      "bytes": 1044,
+      "sha256": "a5b6af049fa9bad56fd80a9f8870a846eb8fbec06c09e4869942f973256a4be0"
     },
     {
       "path": "RIGHTS.md",
       "bytes": 1236,
-      "sha256": "e77361c28a1d83e8e2a9c699941ca8da6f0311e710d1003ffa123fd069792606"
+      "sha256": "d98ef71388036aada2b35a47edd432e11e6bfe4b83e435d0f51596b81f8b4ac2"
     },
     {
       "path": "SCENARIO.md",
-      "bytes": 9056,
-      "sha256": "1f7b32b1bfc4591a38a15fb052c8e5b826e7848083073fc75be44b87e0928873"
-    },
-    {
-      "path": "fields/01-title.txt",
-      "bytes": 33,
-      "sha256": "8334367f8de1e678afa7ee1d295032b3a0fdcf10f388e7a0da02b46f587766df"
-    },
-    {
-      "path": "fields/02-brief-description.txt",
-      "bytes": 71,
-      "sha256": "f9ee8a0801bcfa2fdf7d67d7557ce056083c16abf9f7e496635caae02ded2dee"
-    },
-    {
-      "path": "fields/03-public-description.txt",
-      "bytes": 695,
-      "sha256": "7238a778451033f83029aef3f4b62452e1621d49711912db8cbaae03e6d236c1"
-    },
-    {
-      "path": "fields/04-setting.txt",
-      "bytes": 1333,
-      "sha256": "00f6fc30eca28b5e20ed326cc6f86bdf36c7c7b934d159d6dc39cf4ca2ea6c5c"
-    },
-    {
-      "path": "fields/05-player-description.txt",
-      "bytes": 378,
-      "sha256": "a592d4d983f099e55185bf1d03412d4b692855313b39cb88ef3112b5557ed32a"
-    },
-    {
-      "path": "fields/06-hazelnut.txt",
-      "bytes": 852,
-      "sha256": "270ffdb391319d5ef09bfbc75fb94ba42e41f5d6663fe0b45af498ae7cf95d3b"
-    },
-    {
-      "path": "fields/07-plot.txt",
-      "bytes": 4406,
-      "sha256": "30de71c959dbe0d25e938e4c67df26e67296ee426ef28b642acf1cc2f1a7f5d4"
-    },
-    {
-      "path": "fields/08-opening-description.txt",
-      "bytes": 20,
-      "sha256": "1765cc3522b5be820b93ea4ec692d73034bb9833d3f7159d7d832d7936c43c09"
-    },
-    {
-      "path": "fields/09-opening-narrative.txt",
-      "bytes": 1078,
-      "sha256": "08d57cc9ed3840b39c0a402393d2cb03f108ffe12d3245394820302cfbf88b0c"
+      "bytes": 28405,
+      "sha256": "235fd885c7dcdf8002af116a0d90a3d5305ff8d6924b32965dff41be36e38420"
     },
     {
       "path": "verify-demo.mjs",
-      "bytes": 2771,
-      "sha256": "74a8b773a06ba5237de1b3b2d23d57778ec60964efd2605f1eb10bb103f0b01f"
+      "bytes": 6347,
+      "sha256": "f073a90815a352d507fd5c4c7ad35ddb140a47c560ba2a100495525c6a656816"
+    },
+    {
+      "path": "verify-demo.test.mjs",
+      "bytes": 2449,
+      "sha256": "39c683d7516319faae959fdde5c81a8b71a227f38b2b26ef44e0266c09dae0f6"
     }
   ]
 }

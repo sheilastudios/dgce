@@ -1,0 +1,53 @@
+{
+  "source": "\"I will wipe the rail first,\" I tell Cynthia. I wipe away the sauce with a clean cloth and leave the walk-in ticket beside the screen. \"The walk-in waits until five clears.\"",
+  "nonce": "dgce-c739616f8f8dc3a75d47bdfc",
+  "body": "<memory>\nEstablished:\n#3 Darryl [npc] (active, fresh) — A NeoKing Burgers employee who covered Johnny's fryer station during Johnny's break.\n    last supported turn 17 of 35\n</memory>\n\n<deck>\nA chunk of carved stone breaks free from the shelving and floats past Pip's ledge, rotating slowly in the rising water.\nWeave this in only if it is entirely cohesive, coherent and believable in the current scene. Otherwise ignore it completely.\n</deck>",
+  "prose": {
+    "innerText": "“I will wipe the rail first,” I tell Cynthia. I wipe away the sauce with a clean cloth and leave the walk-in ticket beside the screen. “The walk-in waits until five clears.”",
+    "childNodes": [
+      {
+        "nodeType": 1, "tagName": "P", "concealed": null, "display": "",
+        "textContent": "“I will wipe the rail first,” I tell Cynthia. I wipe away the sauce with a clean cloth and leave the walk-in ticket beside the screen. “The walk-in waits until five clears.”",
+        "childNodes": [
+          { "nodeType": 1, "tagName": "SPAN", "className": "quote", "textContent": "“I will wipe the rail first,”", "childNodes": [
+            { "nodeType": 3, "textContent": "“" },
+            { "nodeType": 3, "textContent": "I will wipe the rail first," },
+            { "nodeType": 3, "textContent": "”" }
+          ] },
+          { "nodeType": 3, "textContent": " I tell Cynthia. I wipe away the sauce with a clean cloth and leave the walk-in ticket beside the screen. ", "childNodes": [] },
+          { "nodeType": 1, "tagName": "SPAN", "className": "quote", "textContent": "“The walk-in waits until five clears.”", "childNodes": [
+            { "nodeType": 3, "textContent": "“" },
+            { "nodeType": 3, "textContent": "The walk-in waits until five clears." },
+            { "nodeType": 3, "textContent": "”" }
+          ] }
+        ]
+      },
+      { "nodeType": 3, "textContent": "\n", "childNodes": [] },
+      {
+        "nodeType": 1, "tagName": "P", "concealed": "1", "display": "none",
+        "textContent": "<hidden><ext_ctx id=“dgce-c739616f8f8dc3a75d47bdfc”>\n<memory>\nEstablished:\n#3 Darryl [npc] (active, fresh) — A NeoKing Burgers employee who covered Johnny's fryer station during Johnny's break.\nlast supported turn 17 of 35\n</memory>",
+        "childNodes": [
+          { "nodeType": 3, "textContent": "<hidden>", "childNodes": [] },
+          { "nodeType": 3, "textContent": "<ext_ctx id=", "childNodes": [] },
+          { "nodeType": 1, "tagName": "SPAN", "className": "quote", "textContent": "“dgce-c739616f8f8dc3a75d47bdfc”", "childNodes": [
+            { "nodeType": 3, "textContent": "“" },
+            { "nodeType": 3, "textContent": "dgce-c739616f8f8dc3a75d47bdfc" },
+            { "nodeType": 3, "textContent": "”" }
+          ] },
+          { "nodeType": 3, "textContent": ">\n", "childNodes": [] },
+          { "nodeType": 3, "textContent": "<memory>", "childNodes": [] },
+          { "nodeType": 3, "textContent": "\nEstablished:\n#3 Darryl [npc] (active, fresh) — A NeoKing Burgers employee who covered Johnny's fryer station during Johnny's break.\nlast supported turn 17 of 35\n", "childNodes": [] },
+          { "nodeType": 3, "textContent": "</memory>", "childNodes": [] }
+        ]
+      },
+      { "nodeType": 3, "textContent": "\n", "childNodes": [] },
+      {
+        "nodeType": 1, "tagName": "P", "concealed": "1", "display": "none",
+        "textContent": "<deck>\nA chunk of carved stone breaks free from the shelving and floats past Pip's ledge, rotating slowly in the rising water.\nWeave this in only if it is entirely cohesive, coherent and believable in the current scene. Otherwise ignore it completely.\n</deck>\n</ext_ctx></hidden>",
+        "childNodes": [
+          { "nodeType": 3, "textContent": "<deck>\nA chunk of carved stone breaks free from the shelving and floats past Pip's ledge, rotating slowly in the rising water.\nWeave this in only if it is entirely cohesive, coherent and believable in the current scene. Otherwise ignore it completely.\n</deck>\n</ext_ctx></hidden>", "childNodes": [] }
+        ]
+      }
+    ]
+  }
+}
