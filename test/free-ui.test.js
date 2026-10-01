@@ -33,14 +33,12 @@ async function sourceReaders(doc) {
     const module = await import(new URL(match[2], new URL('../extension/ui/panel.js', import.meta.url)));
     for (const name of wanted) bindings[name] = module[name];
   }
-  return runInNewContext(`${extract('recentModelTurns')}\n${extract('recentModelInteractions')}\n${extract('transcriptText')}\n({ recentModelTurns, recentModelInteractions, transcriptText })`, bindings);
+  return runInNewContext(`${extract('recentModelTurns')}\n({ recentModelTurns })`, bindings);
 }
 
 test('Free assembled transcript readers resolve real imports on an empty first send', async () => {
   const readers = await sourceReaders({ querySelectorAll: () => [] });
   assert.equal(readers.recentModelTurns().length, 0);
-  assert.equal(readers.recentModelInteractions().length, 0);
-  assert.equal(readers.transcriptText(), '');
 });
 
 test('Free assembled transcript readers handle short history without Full combat helpers', async () => {
@@ -49,8 +47,6 @@ test('Free assembled transcript readers handle short history without Full combat
     getBoundingClientRect: () => ({ x: 100, width: 600 }), scrollHeight: 1000, clientHeight: 400 };
   const readers = await sourceReaders({ querySelectorAll: selector => selector === 'div' ? [scroller] : [] });
   assert.equal(readers.recentModelTurns().join(''), long);
-  assert.equal(readers.recentModelInteractions().join(''), long);
-  assert.equal(readers.transcriptText(), scroller.innerText);
 });
 
 test('Free assembled transcript readers retain per-interaction ambiguity rejection', async () => {

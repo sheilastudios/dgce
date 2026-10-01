@@ -149,18 +149,6 @@ function actionButton(root, pattern) {
     .find((button) => labels(button).some((value) => pattern.test(value)));
 }
 
-function editorIn(interaction, doc, nonce = null) {
-  const selector = 'textarea, [contenteditable][aria-label="Edit interaction text"]';
-  const local = interaction?.querySelector?.(selector);
-  if (local && (!nonce || String(controlText(local) ?? '').includes(nonce))) return local;
-  const editors = [...doc.querySelectorAll(selector)].filter((editor) => {
-    if (!visible(editor)) return false;
-    if (nonce && !String(controlText(editor) ?? '').includes(nonce)) return false;
-    return true;
-  });
-  return editors.length === 1 ? editors[0] : null;
-}
-
 function restoreFocus(node) {
   if (node?.isConnected !== false && typeof node?.focus === 'function') {
     try { node.focus(); } catch { /* focus restoration is best effort */ }
