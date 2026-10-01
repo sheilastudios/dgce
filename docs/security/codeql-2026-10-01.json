@@ -1,0 +1,588 @@
+{
+  "schema": 1,
+  "repository": "https://github.com/sheilastudios/dgce",
+  "sourceCommit": "24461ed97828f8cf641725f9fefaffb8a487a57d",
+  "analysisStartedUTC": "2026-10-01T18:02:49.9483820Z",
+  "analysisCompletedUTC": "2026-10-01T18:06:01.6893041Z",
+  "codeqlVersion": "2.27.1",
+  "queryPack": "codeql/javascript-queries@2.4.6",
+  "suite": "codeql-suites/javascript-security-and-quality.qls",
+  "threatModel": "all",
+  "queryEvaluations": 203,
+  "sarifRuleRecords": 201,
+  "analyzedJavaScriptTypeScriptFiles": 111,
+  "threads": 1,
+  "ramMB": 4096,
+  "maxPaths": 10,
+  "sourceZipSHA256": "704f4b091031cae4a39485ea416b2ab002249ce72b23bd3a026004ed73759a58",
+  "sarifSHA256": "c2cdddfc04f17c015245caaa65cae231dd90099ed6ee0dc40086ba9b41f51a25",
+  "resultCount": 42,
+  "locationCounts": {
+    "nonVendorExtensionRuntime": 0,
+    "tests": 37,
+    "generatedVendor": 3,
+    "demoTooling": 2
+  },
+  "verification": {
+    "nodeVersion": "26.5.0",
+    "testsPassed": 766,
+    "testsFailed": 0,
+    "testLogSHA256": "a90fd250a07c234af076a13f66c97bc47d2c439c3cf1f3e348135369186020fe",
+    "demoInventory": 8,
+    "demoPayloadHashes": 7,
+    "vendorRegeneration": "pass",
+    "interferenceProbe": "Confirmed residual local-writer race using a disposable fixture; not a live concurrent-process exploit."
+  },
+  "githubMainScan": {
+    "analysisId": 1876097374,
+    "runId": 36903603764,
+    "sourceCommit": "24461ed97828f8cf641725f9fefaffb8a487a57d",
+    "createdUTC": "2026-10-01T18:01:31Z",
+    "rules": 87,
+    "findings": 0,
+    "url": "https://github.com/sheilastudios/dgce/actions/runs/36903603764"
+  },
+  "limitations": [
+    "No new live-browser test.",
+    "No release certification or rebuilt release ZIP.",
+    "Raw SARIF/database and machine-specific logs retained outside Git.",
+    "No finding suppressions or dismissals added.",
+    "Read the remaining filesystem-race limitation before sealing."
+  ],
+  "findings": [
+    {
+      "id": "F01",
+      "rule": "js/code-injection",
+      "path": "test/archivist-scheduling.test.js",
+      "line": 16,
+      "sourceLocations": [
+        "test/archivist-scheduling.test.js:6"
+      ],
+      "disposition": "expected_trusted_source_test_execution",
+      "reason": "Fixed local extension/ui/panel.js source is sliced into function/declaration text and evaluated by the Node test harness. Each reported flow starts at the literal repository-relative readFileSync, not model output, browser data, argv, or network input. Tests also directly import repository modules; arbitrary repository modifications already supply executable code.",
+      "action": "No security patch or suppression. Keep tests restricted to trusted or isolated checkouts; node:vm is not a security sandbox. Reassess if a test ever accepts externally supplied source.",
+      "evidence": "Entire finding source file is byte-identical to the previously adjudicated snapshot."
+    },
+    {
+      "id": "F02",
+      "rule": "js/code-injection",
+      "path": "test/archivist-scheduling.test.js",
+      "line": 54,
+      "sourceLocations": [
+        "test/archivist-scheduling.test.js:6"
+      ],
+      "disposition": "expected_trusted_source_test_execution",
+      "reason": "Fixed local extension/ui/panel.js source is sliced into function/declaration text and evaluated by the Node test harness. Each reported flow starts at the literal repository-relative readFileSync, not model output, browser data, argv, or network input. Tests also directly import repository modules; arbitrary repository modifications already supply executable code.",
+      "action": "No security patch or suppression. Keep tests restricted to trusted or isolated checkouts; node:vm is not a security sandbox. Reassess if a test ever accepts externally supplied source.",
+      "evidence": "Entire finding source file is byte-identical to the previously adjudicated snapshot."
+    },
+    {
+      "id": "F03",
+      "rule": "js/code-injection",
+      "path": "test/archivist-scheduling.test.js",
+      "line": 72,
+      "sourceLocations": [
+        "test/archivist-scheduling.test.js:6"
+      ],
+      "disposition": "expected_trusted_source_test_execution",
+      "reason": "Fixed local extension/ui/panel.js source is sliced into function/declaration text and evaluated by the Node test harness. Each reported flow starts at the literal repository-relative readFileSync, not model output, browser data, argv, or network input. Tests also directly import repository modules; arbitrary repository modifications already supply executable code.",
+      "action": "No security patch or suppression. Keep tests restricted to trusted or isolated checkouts; node:vm is not a security sandbox. Reassess if a test ever accepts externally supplied source.",
+      "evidence": "Entire finding source file is byte-identical to the previously adjudicated snapshot."
+    },
+    {
+      "id": "F04",
+      "rule": "js/code-injection",
+      "path": "test/deck-refill.test.js",
+      "line": 16,
+      "sourceLocations": [
+        "test/deck-refill.test.js:8"
+      ],
+      "disposition": "expected_trusted_source_test_execution",
+      "reason": "Fixed local extension/ui/panel.js source is sliced into function/declaration text and evaluated by the Node test harness. Each reported flow starts at the literal repository-relative readFileSync, not model output, browser data, argv, or network input. Tests also directly import repository modules; arbitrary repository modifications already supply executable code.",
+      "action": "No security patch or suppression. Keep tests restricted to trusted or isolated checkouts; node:vm is not a security sandbox. Reassess if a test ever accepts externally supplied source.",
+      "evidence": "Entire finding source file is byte-identical to the previously adjudicated snapshot."
+    },
+    {
+      "id": "F05",
+      "rule": "js/code-injection",
+      "path": "test/free-deck.test.js",
+      "line": 23,
+      "sourceLocations": [
+        "test/free-deck.test.js:14"
+      ],
+      "disposition": "expected_trusted_source_test_execution",
+      "reason": "Fixed local extension/ui/panel.js source is sliced into function/declaration text and evaluated by the Node test harness. Each reported flow starts at the literal repository-relative readFileSync, not model output, browser data, argv, or network input. Tests also directly import repository modules; arbitrary repository modifications already supply executable code.",
+      "action": "No security patch or suppression. Keep tests restricted to trusted or isolated checkouts; node:vm is not a security sandbox. Reassess if a test ever accepts externally supplied source.",
+      "evidence": "Entire finding source file is byte-identical to the previously adjudicated snapshot."
+    },
+    {
+      "id": "F06",
+      "rule": "js/code-injection",
+      "path": "test/free-deck.test.js",
+      "line": 102,
+      "sourceLocations": [
+        "test/free-deck.test.js:14"
+      ],
+      "disposition": "expected_trusted_source_test_execution",
+      "reason": "Fixed local extension/ui/panel.js source is sliced into function/declaration text and evaluated by the Node test harness. Each reported flow starts at the literal repository-relative readFileSync, not model output, browser data, argv, or network input. Tests also directly import repository modules; arbitrary repository modifications already supply executable code.",
+      "action": "No security patch or suppression. Keep tests restricted to trusted or isolated checkouts; node:vm is not a security sandbox. Reassess if a test ever accepts externally supplied source.",
+      "evidence": "Entire finding source file is byte-identical to the previously adjudicated snapshot."
+    },
+    {
+      "id": "F07",
+      "rule": "js/code-injection",
+      "path": "test/free-deck.test.js",
+      "line": 128,
+      "sourceLocations": [
+        "test/free-deck.test.js:14"
+      ],
+      "disposition": "expected_trusted_source_test_execution",
+      "reason": "Fixed local extension/ui/panel.js source is sliced into function/declaration text and evaluated by the Node test harness. Each reported flow starts at the literal repository-relative readFileSync, not model output, browser data, argv, or network input. Tests also directly import repository modules; arbitrary repository modifications already supply executable code.",
+      "action": "No security patch or suppression. Keep tests restricted to trusted or isolated checkouts; node:vm is not a security sandbox. Reassess if a test ever accepts externally supplied source.",
+      "evidence": "Entire finding source file is byte-identical to the previously adjudicated snapshot."
+    },
+    {
+      "id": "F08",
+      "rule": "js/code-injection",
+      "path": "test/free-deck.test.js",
+      "line": 152,
+      "sourceLocations": [
+        "test/free-deck.test.js:14"
+      ],
+      "disposition": "expected_trusted_source_test_execution",
+      "reason": "Fixed local extension/ui/panel.js source is sliced into function/declaration text and evaluated by the Node test harness. Each reported flow starts at the literal repository-relative readFileSync, not model output, browser data, argv, or network input. Tests also directly import repository modules; arbitrary repository modifications already supply executable code.",
+      "action": "No security patch or suppression. Keep tests restricted to trusted or isolated checkouts; node:vm is not a security sandbox. Reassess if a test ever accepts externally supplied source.",
+      "evidence": "Entire finding source file is byte-identical to the previously adjudicated snapshot."
+    },
+    {
+      "id": "F09",
+      "rule": "js/code-injection",
+      "path": "test/free-deck.test.js",
+      "line": 163,
+      "sourceLocations": [
+        "test/free-deck.test.js:14"
+      ],
+      "disposition": "expected_trusted_source_test_execution",
+      "reason": "Fixed local extension/ui/panel.js source is sliced into function/declaration text and evaluated by the Node test harness. Each reported flow starts at the literal repository-relative readFileSync, not model output, browser data, argv, or network input. Tests also directly import repository modules; arbitrary repository modifications already supply executable code.",
+      "action": "No security patch or suppression. Keep tests restricted to trusted or isolated checkouts; node:vm is not a security sandbox. Reassess if a test ever accepts externally supplied source.",
+      "evidence": "Entire finding source file is byte-identical to the previously adjudicated snapshot."
+    },
+    {
+      "id": "F10",
+      "rule": "js/code-injection",
+      "path": "test/free-deck.test.js",
+      "line": 182,
+      "sourceLocations": [
+        "test/free-deck.test.js:14"
+      ],
+      "disposition": "expected_trusted_source_test_execution",
+      "reason": "Fixed local extension/ui/panel.js source is sliced into function/declaration text and evaluated by the Node test harness. Each reported flow starts at the literal repository-relative readFileSync, not model output, browser data, argv, or network input. Tests also directly import repository modules; arbitrary repository modifications already supply executable code.",
+      "action": "No security patch or suppression. Keep tests restricted to trusted or isolated checkouts; node:vm is not a security sandbox. Reassess if a test ever accepts externally supplied source.",
+      "evidence": "Entire finding source file is byte-identical to the previously adjudicated snapshot."
+    },
+    {
+      "id": "F11",
+      "rule": "js/code-injection",
+      "path": "test/free-runtime.test.js",
+      "line": 117,
+      "sourceLocations": [
+        "test/free-runtime.test.js:23"
+      ],
+      "disposition": "expected_trusted_source_test_execution",
+      "reason": "Fixed local extension/ui/panel.js source is sliced into function/declaration text and evaluated by the Node test harness. Each reported flow starts at the literal repository-relative readFileSync, not model output, browser data, argv, or network input. Tests also directly import repository modules; arbitrary repository modifications already supply executable code.",
+      "action": "No security patch or suppression. Keep tests restricted to trusted or isolated checkouts; node:vm is not a security sandbox. Reassess if a test ever accepts externally supplied source.",
+      "evidence": "Entire finding source file is byte-identical to the previously adjudicated snapshot."
+    },
+    {
+      "id": "F12",
+      "rule": "js/code-injection",
+      "path": "test/free-runtime.test.js",
+      "line": 138,
+      "sourceLocations": [
+        "test/free-runtime.test.js:23"
+      ],
+      "disposition": "expected_trusted_source_test_execution",
+      "reason": "Fixed local extension/ui/panel.js source is sliced into function/declaration text and evaluated by the Node test harness. Each reported flow starts at the literal repository-relative readFileSync, not model output, browser data, argv, or network input. Tests also directly import repository modules; arbitrary repository modifications already supply executable code.",
+      "action": "No security patch or suppression. Keep tests restricted to trusted or isolated checkouts; node:vm is not a security sandbox. Reassess if a test ever accepts externally supplied source.",
+      "evidence": "Entire finding source file is byte-identical to the previously adjudicated snapshot."
+    },
+    {
+      "id": "F13",
+      "rule": "js/code-injection",
+      "path": "test/free-runtime.test.js",
+      "line": 197,
+      "sourceLocations": [
+        "test/free-runtime.test.js:23"
+      ],
+      "disposition": "expected_trusted_source_test_execution",
+      "reason": "Fixed local extension/ui/panel.js source is sliced into function/declaration text and evaluated by the Node test harness. Each reported flow starts at the literal repository-relative readFileSync, not model output, browser data, argv, or network input. Tests also directly import repository modules; arbitrary repository modifications already supply executable code.",
+      "action": "No security patch or suppression. Keep tests restricted to trusted or isolated checkouts; node:vm is not a security sandbox. Reassess if a test ever accepts externally supplied source.",
+      "evidence": "Entire finding source file is byte-identical to the previously adjudicated snapshot."
+    },
+    {
+      "id": "F14",
+      "rule": "js/code-injection",
+      "path": "test/free-runtime.test.js",
+      "line": 218,
+      "sourceLocations": [
+        "test/free-runtime.test.js:23"
+      ],
+      "disposition": "expected_trusted_source_test_execution",
+      "reason": "Fixed local extension/ui/panel.js source is sliced into function/declaration text and evaluated by the Node test harness. Each reported flow starts at the literal repository-relative readFileSync, not model output, browser data, argv, or network input. Tests also directly import repository modules; arbitrary repository modifications already supply executable code.",
+      "action": "No security patch or suppression. Keep tests restricted to trusted or isolated checkouts; node:vm is not a security sandbox. Reassess if a test ever accepts externally supplied source.",
+      "evidence": "Entire finding source file is byte-identical to the previously adjudicated snapshot."
+    },
+    {
+      "id": "F15",
+      "rule": "js/code-injection",
+      "path": "test/free-runtime.test.js",
+      "line": 246,
+      "sourceLocations": [
+        "test/free-runtime.test.js:23"
+      ],
+      "disposition": "expected_trusted_source_test_execution",
+      "reason": "Fixed local extension/ui/panel.js source is sliced into function/declaration text and evaluated by the Node test harness. Each reported flow starts at the literal repository-relative readFileSync, not model output, browser data, argv, or network input. Tests also directly import repository modules; arbitrary repository modifications already supply executable code.",
+      "action": "No security patch or suppression. Keep tests restricted to trusted or isolated checkouts; node:vm is not a security sandbox. Reassess if a test ever accepts externally supplied source.",
+      "evidence": "Entire finding source file is byte-identical to the previously adjudicated snapshot."
+    },
+    {
+      "id": "F16",
+      "rule": "js/code-injection",
+      "path": "test/free-runtime.test.js",
+      "line": 272,
+      "sourceLocations": [
+        "test/free-runtime.test.js:23"
+      ],
+      "disposition": "expected_trusted_source_test_execution",
+      "reason": "Fixed local extension/ui/panel.js source is sliced into function/declaration text and evaluated by the Node test harness. Each reported flow starts at the literal repository-relative readFileSync, not model output, browser data, argv, or network input. Tests also directly import repository modules; arbitrary repository modifications already supply executable code.",
+      "action": "No security patch or suppression. Keep tests restricted to trusted or isolated checkouts; node:vm is not a security sandbox. Reassess if a test ever accepts externally supplied source.",
+      "evidence": "Entire finding source file is byte-identical to the previously adjudicated snapshot."
+    },
+    {
+      "id": "F17",
+      "rule": "js/code-injection",
+      "path": "test/free-runtime.test.js",
+      "line": 289,
+      "sourceLocations": [
+        "test/free-runtime.test.js:23"
+      ],
+      "disposition": "expected_trusted_source_test_execution",
+      "reason": "Fixed local extension/ui/panel.js source is sliced into function/declaration text and evaluated by the Node test harness. Each reported flow starts at the literal repository-relative readFileSync, not model output, browser data, argv, or network input. Tests also directly import repository modules; arbitrary repository modifications already supply executable code.",
+      "action": "No security patch or suppression. Keep tests restricted to trusted or isolated checkouts; node:vm is not a security sandbox. Reassess if a test ever accepts externally supplied source.",
+      "evidence": "Entire finding source file is byte-identical to the previously adjudicated snapshot."
+    },
+    {
+      "id": "F18",
+      "rule": "js/code-injection",
+      "path": "test/free-runtime.test.js",
+      "line": 415,
+      "sourceLocations": [
+        "test/free-runtime.test.js:23"
+      ],
+      "disposition": "expected_trusted_source_test_execution",
+      "reason": "Fixed local extension/ui/panel.js source is sliced into function/declaration text and evaluated by the Node test harness. Each reported flow starts at the literal repository-relative readFileSync, not model output, browser data, argv, or network input. Tests also directly import repository modules; arbitrary repository modifications already supply executable code.",
+      "action": "No security patch or suppression. Keep tests restricted to trusted or isolated checkouts; node:vm is not a security sandbox. Reassess if a test ever accepts externally supplied source.",
+      "evidence": "Entire finding source file is byte-identical to the previously adjudicated snapshot."
+    },
+    {
+      "id": "F19",
+      "rule": "js/code-injection",
+      "path": "test/free-runtime.test.js",
+      "line": 432,
+      "sourceLocations": [
+        "test/free-runtime.test.js:23"
+      ],
+      "disposition": "expected_trusted_source_test_execution",
+      "reason": "Fixed local extension/ui/panel.js source is sliced into function/declaration text and evaluated by the Node test harness. Each reported flow starts at the literal repository-relative readFileSync, not model output, browser data, argv, or network input. Tests also directly import repository modules; arbitrary repository modifications already supply executable code.",
+      "action": "No security patch or suppression. Keep tests restricted to trusted or isolated checkouts; node:vm is not a security sandbox. Reassess if a test ever accepts externally supplied source.",
+      "evidence": "Entire finding source file is byte-identical to the previously adjudicated snapshot."
+    },
+    {
+      "id": "F20",
+      "rule": "js/code-injection",
+      "path": "test/free-runtime.test.js",
+      "line": 446,
+      "sourceLocations": [
+        "test/free-runtime.test.js:23"
+      ],
+      "disposition": "expected_trusted_source_test_execution",
+      "reason": "Fixed local extension/ui/panel.js source is sliced into function/declaration text and evaluated by the Node test harness. Each reported flow starts at the literal repository-relative readFileSync, not model output, browser data, argv, or network input. Tests also directly import repository modules; arbitrary repository modifications already supply executable code.",
+      "action": "No security patch or suppression. Keep tests restricted to trusted or isolated checkouts; node:vm is not a security sandbox. Reassess if a test ever accepts externally supplied source.",
+      "evidence": "Entire finding source file is byte-identical to the previously adjudicated snapshot."
+    },
+    {
+      "id": "F21",
+      "rule": "js/code-injection",
+      "path": "test/free-runtime.test.js",
+      "line": 447,
+      "sourceLocations": [
+        "test/free-runtime.test.js:23"
+      ],
+      "disposition": "expected_trusted_source_test_execution",
+      "reason": "Fixed local extension/ui/panel.js source is sliced into function/declaration text and evaluated by the Node test harness. Each reported flow starts at the literal repository-relative readFileSync, not model output, browser data, argv, or network input. Tests also directly import repository modules; arbitrary repository modifications already supply executable code.",
+      "action": "No security patch or suppression. Keep tests restricted to trusted or isolated checkouts; node:vm is not a security sandbox. Reassess if a test ever accepts externally supplied source.",
+      "evidence": "Entire finding source file is byte-identical to the previously adjudicated snapshot."
+    },
+    {
+      "id": "F22",
+      "rule": "js/code-injection",
+      "path": "test/free-runtime.test.js",
+      "line": 448,
+      "sourceLocations": [
+        "test/free-runtime.test.js:23"
+      ],
+      "disposition": "expected_trusted_source_test_execution",
+      "reason": "Fixed local extension/ui/panel.js source is sliced into function/declaration text and evaluated by the Node test harness. Each reported flow starts at the literal repository-relative readFileSync, not model output, browser data, argv, or network input. Tests also directly import repository modules; arbitrary repository modifications already supply executable code.",
+      "action": "No security patch or suppression. Keep tests restricted to trusted or isolated checkouts; node:vm is not a security sandbox. Reassess if a test ever accepts externally supplied source.",
+      "evidence": "Entire finding source file is byte-identical to the previously adjudicated snapshot."
+    },
+    {
+      "id": "F23",
+      "rule": "js/code-injection",
+      "path": "test/free-runtime.test.js",
+      "line": 449,
+      "sourceLocations": [
+        "test/free-runtime.test.js:23"
+      ],
+      "disposition": "expected_trusted_source_test_execution",
+      "reason": "Fixed local extension/ui/panel.js source is sliced into function/declaration text and evaluated by the Node test harness. Each reported flow starts at the literal repository-relative readFileSync, not model output, browser data, argv, or network input. Tests also directly import repository modules; arbitrary repository modifications already supply executable code.",
+      "action": "No security patch or suppression. Keep tests restricted to trusted or isolated checkouts; node:vm is not a security sandbox. Reassess if a test ever accepts externally supplied source.",
+      "evidence": "Entire finding source file is byte-identical to the previously adjudicated snapshot."
+    },
+    {
+      "id": "F24",
+      "rule": "js/code-injection",
+      "path": "test/free-runtime.test.js",
+      "line": 461,
+      "sourceLocations": [
+        "test/free-runtime.test.js:23"
+      ],
+      "disposition": "expected_trusted_source_test_execution",
+      "reason": "Fixed local extension/ui/panel.js source is sliced into function/declaration text and evaluated by the Node test harness. Each reported flow starts at the literal repository-relative readFileSync, not model output, browser data, argv, or network input. Tests also directly import repository modules; arbitrary repository modifications already supply executable code.",
+      "action": "No security patch or suppression. Keep tests restricted to trusted or isolated checkouts; node:vm is not a security sandbox. Reassess if a test ever accepts externally supplied source.",
+      "evidence": "Entire finding source file is byte-identical to the previously adjudicated snapshot."
+    },
+    {
+      "id": "F25",
+      "rule": "js/code-injection",
+      "path": "test/free-ui.test.js",
+      "line": 36,
+      "sourceLocations": [
+        "test/free-ui.test.js:18"
+      ],
+      "disposition": "expected_trusted_source_test_execution",
+      "reason": "Fixed local extension/ui/panel.js source is sliced into function/declaration text and evaluated by the Node test harness. Each reported flow starts at the literal repository-relative readFileSync, not model output, browser data, argv, or network input. Tests also directly import repository modules; arbitrary repository modifications already supply executable code.",
+      "action": "No security patch or suppression. Keep tests restricted to trusted or isolated checkouts; node:vm is not a security sandbox. Reassess if a test ever accepts externally supplied source.",
+      "evidence": "Entire finding source file is byte-identical to the previously adjudicated snapshot."
+    },
+    {
+      "id": "F26",
+      "rule": "js/code-injection",
+      "path": "test/free-ui.test.js",
+      "line": 129,
+      "sourceLocations": [
+        "test/free-ui.test.js:18"
+      ],
+      "disposition": "expected_trusted_source_test_execution",
+      "reason": "Fixed local extension/ui/panel.js source is sliced into function/declaration text and evaluated by the Node test harness. Each reported flow starts at the literal repository-relative readFileSync, not model output, browser data, argv, or network input. Tests also directly import repository modules; arbitrary repository modifications already supply executable code.",
+      "action": "No security patch or suppression. Keep tests restricted to trusted or isolated checkouts; node:vm is not a security sandbox. Reassess if a test ever accepts externally supplied source.",
+      "evidence": "Entire finding source file is byte-identical to the previously adjudicated snapshot."
+    },
+    {
+      "id": "F27",
+      "rule": "js/code-injection",
+      "path": "test/free-ui.test.js",
+      "line": 214,
+      "sourceLocations": [
+        "test/free-ui.test.js:18"
+      ],
+      "disposition": "expected_trusted_source_test_execution",
+      "reason": "Fixed local extension/ui/panel.js source is sliced into function/declaration text and evaluated by the Node test harness. Each reported flow starts at the literal repository-relative readFileSync, not model output, browser data, argv, or network input. Tests also directly import repository modules; arbitrary repository modifications already supply executable code.",
+      "action": "No security patch or suppression. Keep tests restricted to trusted or isolated checkouts; node:vm is not a security sandbox. Reassess if a test ever accepts externally supplied source.",
+      "evidence": "Entire finding source file is byte-identical to the previously adjudicated snapshot."
+    },
+    {
+      "id": "F28",
+      "rule": "js/code-injection",
+      "path": "test/free-ui.test.js",
+      "line": 273,
+      "sourceLocations": [
+        "test/free-ui.test.js:18"
+      ],
+      "disposition": "expected_trusted_source_test_execution",
+      "reason": "Fixed local extension/ui/panel.js source is sliced into function/declaration text and evaluated by the Node test harness. Each reported flow starts at the literal repository-relative readFileSync, not model output, browser data, argv, or network input. Tests also directly import repository modules; arbitrary repository modifications already supply executable code.",
+      "action": "No security patch or suppression. Keep tests restricted to trusted or isolated checkouts; node:vm is not a security sandbox. Reassess if a test ever accepts externally supplied source.",
+      "evidence": "Entire finding source file is byte-identical to the previously adjudicated snapshot."
+    },
+    {
+      "id": "F29",
+      "rule": "js/code-injection",
+      "path": "test/free-ui.test.js",
+      "line": 283,
+      "sourceLocations": [
+        "test/free-ui.test.js:18"
+      ],
+      "disposition": "expected_trusted_source_test_execution",
+      "reason": "Fixed local extension/ui/panel.js source is sliced into function/declaration text and evaluated by the Node test harness. Each reported flow starts at the literal repository-relative readFileSync, not model output, browser data, argv, or network input. Tests also directly import repository modules; arbitrary repository modifications already supply executable code.",
+      "action": "No security patch or suppression. Keep tests restricted to trusted or isolated checkouts; node:vm is not a security sandbox. Reassess if a test ever accepts externally supplied source.",
+      "evidence": "Entire finding source file is byte-identical to the previously adjudicated snapshot."
+    },
+    {
+      "id": "F30",
+      "rule": "js/code-injection",
+      "path": "test/free-ui.test.js",
+      "line": 339,
+      "sourceLocations": [
+        "test/free-ui.test.js:18"
+      ],
+      "disposition": "expected_trusted_source_test_execution",
+      "reason": "Fixed local extension/ui/panel.js source is sliced into function/declaration text and evaluated by the Node test harness. Each reported flow starts at the literal repository-relative readFileSync, not model output, browser data, argv, or network input. Tests also directly import repository modules; arbitrary repository modifications already supply executable code.",
+      "action": "No security patch or suppression. Keep tests restricted to trusted or isolated checkouts; node:vm is not a security sandbox. Reassess if a test ever accepts externally supplied source.",
+      "evidence": "Entire finding source file is byte-identical to the previously adjudicated snapshot."
+    },
+    {
+      "id": "F31",
+      "rule": "js/code-injection",
+      "path": "test/plain-history-continuity.test.js",
+      "line": 53,
+      "sourceLocations": [
+        "test/plain-history-continuity.test.js:12"
+      ],
+      "disposition": "expected_trusted_source_test_execution",
+      "reason": "Fixed local extension/ui/panel.js source is sliced into function/declaration text and evaluated by the Node test harness. Each reported flow starts at the literal repository-relative readFileSync, not model output, browser data, argv, or network input. Tests also directly import repository modules; arbitrary repository modifications already supply executable code.",
+      "action": "No security patch or suppression. Keep tests restricted to trusted or isolated checkouts; node:vm is not a security sandbox. Reassess if a test ever accepts externally supplied source.",
+      "evidence": "Entire finding source file is byte-identical to the previously adjudicated snapshot."
+    },
+    {
+      "id": "F32",
+      "rule": "js/code-injection",
+      "path": "test/plain-history-continuity.test.js",
+      "line": 266,
+      "sourceLocations": [
+        "test/plain-history-continuity.test.js:12"
+      ],
+      "disposition": "expected_trusted_source_test_execution",
+      "reason": "Fixed local extension/ui/panel.js source is sliced into function/declaration text and evaluated by the Node test harness. Each reported flow starts at the literal repository-relative readFileSync, not model output, browser data, argv, or network input. Tests also directly import repository modules; arbitrary repository modifications already supply executable code.",
+      "action": "No security patch or suppression. Keep tests restricted to trusted or isolated checkouts; node:vm is not a security sandbox. Reassess if a test ever accepts externally supplied source.",
+      "evidence": "Entire finding source file is byte-identical to the previously adjudicated snapshot."
+    },
+    {
+      "id": "F33",
+      "rule": "js/code-injection",
+      "path": "test/runtime-cleanup.test.js",
+      "line": 50,
+      "sourceLocations": [
+        "test/runtime-cleanup.test.js:9"
+      ],
+      "disposition": "expected_trusted_source_test_execution",
+      "reason": "Fixed local extension/ui/panel.js source is sliced into function/declaration text and evaluated by the Node test harness. Each reported flow starts at the literal repository-relative readFileSync, not model output, browser data, argv, or network input. Tests also directly import repository modules; arbitrary repository modifications already supply executable code.",
+      "action": "No security patch or suppression. Keep tests restricted to trusted or isolated checkouts; node:vm is not a security sandbox. Reassess if a test ever accepts externally supplied source.",
+      "evidence": "Entire finding source file is byte-identical to the previously adjudicated snapshot."
+    },
+    {
+      "id": "F34",
+      "rule": "js/code-injection",
+      "path": "test/runtime-cleanup.test.js",
+      "line": 105,
+      "sourceLocations": [
+        "test/runtime-cleanup.test.js:9"
+      ],
+      "disposition": "expected_trusted_source_test_execution",
+      "reason": "Fixed local extension/ui/panel.js source is sliced into function/declaration text and evaluated by the Node test harness. Each reported flow starts at the literal repository-relative readFileSync, not model output, browser data, argv, or network input. Tests also directly import repository modules; arbitrary repository modifications already supply executable code.",
+      "action": "No security patch or suppression. Keep tests restricted to trusted or isolated checkouts; node:vm is not a security sandbox. Reassess if a test ever accepts externally supplied source.",
+      "evidence": "Entire finding source file is byte-identical to the previously adjudicated snapshot."
+    },
+    {
+      "id": "F35",
+      "rule": "js/code-injection",
+      "path": "test/runtime-cleanup.test.js",
+      "line": 116,
+      "sourceLocations": [
+        "test/runtime-cleanup.test.js:9"
+      ],
+      "disposition": "expected_trusted_source_test_execution",
+      "reason": "Fixed local extension/ui/panel.js source is sliced into function/declaration text and evaluated by the Node test harness. Each reported flow starts at the literal repository-relative readFileSync, not model output, browser data, argv, or network input. Tests also directly import repository modules; arbitrary repository modifications already supply executable code.",
+      "action": "No security patch or suppression. Keep tests restricted to trusted or isolated checkouts; node:vm is not a security sandbox. Reassess if a test ever accepts externally supplied source.",
+      "evidence": "Entire finding source file is byte-identical to the previously adjudicated snapshot."
+    },
+    {
+      "id": "F36",
+      "rule": "js/file-system-race",
+      "path": "demos/quantum-enchantments/verify-demo.mjs",
+      "line": 98,
+      "sourceLocations": [],
+      "disposition": "remaining_conditional_local_tooling_race",
+      "reason": "The exclusively created temporary file is closed, read back by pathname, then renamed. A writer with access to the package directory can change the pathname after validation. A deterministic I/O-interference probe confirmed modified bytes can replace the old manifest. The CLI subsequently verifies but cannot retroactively preserve the prior manifest.",
+      "action": "Keep sealing restricted to a trusted quiescent directory. Follow-up hardening should avoid pathname reopen where possible and address ownership through replacement; do not claim atomicity across mutable package inputs. No browser-runtime exploit established."
+    },
+    {
+      "id": "F37",
+      "rule": "js/remote-property-injection",
+      "path": "test/free-ui.test.js",
+      "line": 34,
+      "sourceLocations": [
+        "test/free-ui.test.js:18"
+      ],
+      "disposition": "false_positive_allowlisted_test_binding",
+      "reason": "Before bindings[name] assignment, names.filter only allows assertInteractionSourceFidelity and semanticInjectionText. Neither prototype keys nor arbitrary names can pass. Names and import paths come from local panel source; actual imports resolve to core/injection.js and host/check-source.js.",
+      "action": "No fix required for the reported property injection; preserve allowlist.",
+      "evidence": "Entire finding source file is byte-identical to the previously adjudicated snapshot."
+    },
+    {
+      "id": "F38",
+      "rule": "js/user-controlled-bypass",
+      "path": "demos/quantum-enchantments/verify-demo.mjs",
+      "line": 110,
+      "sourceLocations": [
+        "demos/quantum-enchantments/verify-demo.mjs:110"
+      ],
+      "disposition": "nonsecurity_cli_entrypoint_guard",
+      "reason": "argv[1] versus import.meta.url identifies direct CLI invocation, not authorization. --seal is an explicit local maintainer action subject to filesystem permissions. The inventory and truncate-first defects are fixed in this commit; a separate local filesystem race remains.",
+      "action": "Keep the entrypoint guard. No authentication bypass fix or suppression required."
+    },
+    {
+      "id": "F39",
+      "rule": "js/unused-local-variable",
+      "path": "extension/vendor/parse5.js",
+      "line": 1498,
+      "sourceLocations": [],
+      "disposition": "generated_vendor_residue_nonsecurity",
+      "reason": "The named Set is declared exactly once and never read in the parse-only generated bundle. Locked dependency regeneration reproduces it. No user data is used in initialization.",
+      "action": "Leave generated vendor output unchanged. If size cleanup is ever worthwhile, change the build or upstream dependency and regenerate reproducibly.",
+      "evidence": "Entire finding source file is byte-identical to the previously adjudicated snapshot."
+    },
+    {
+      "id": "F40",
+      "rule": "js/unused-local-variable",
+      "path": "extension/vendor/parse5.js",
+      "line": 8073,
+      "sourceLocations": [],
+      "disposition": "generated_vendor_residue_nonsecurity",
+      "reason": "The named Set is declared exactly once and never read in the parse-only generated bundle. Locked dependency regeneration reproduces it. No user data is used in initialization.",
+      "action": "Leave generated vendor output unchanged. If size cleanup is ever worthwhile, change the build or upstream dependency and regenerate reproducibly.",
+      "evidence": "Entire finding source file is byte-identical to the previously adjudicated snapshot."
+    },
+    {
+      "id": "F41",
+      "rule": "js/unused-local-variable",
+      "path": "test/turn-persistence.test.js",
+      "line": 5,
+      "sourceLocations": [],
+      "disposition": "cosmetic_unused_test_import",
+      "reason": "ConflictError appears only in the storage import; WorkspaceStore from the same module is used. Removing the unused binding would preserve module evaluation.",
+      "action": "Optional one-binding cleanup; no correctness or security impact established. Not changed during this triage.",
+      "evidence": "Entire finding source file is byte-identical to the previously adjudicated snapshot."
+    },
+    {
+      "id": "F42",
+      "rule": "js/useless-expression",
+      "path": "extension/vendor/parse5.js",
+      "line": 5136,
+      "sourceLocations": [],
+      "disposition": "generated_vendor_conditional_nonsecurity",
+      "reason": "The supplied-context branch evaluates an unused local value, but the nullish branch assigns a template fallback used by the following parser construction. Present in installed upstream parse5 source as well. Whole-expression deletion would change behavior.",
+      "action": "Leave generated expression unchanged; focused probes confirm supplied context preservation and nullish initialization.",
+      "evidence": "Entire finding source file is byte-identical to the previously adjudicated snapshot."
+    }
+  ]
+}
