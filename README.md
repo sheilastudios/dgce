@@ -291,3 +291,9 @@ No billing, license service, private runtime, or payment integration is added.
 
 `BUILD-STATUS.json` records public release scope and status.
 `SHA256SUMS.txt` records every packaged file except the hash list itself.
+
+## Source security review
+
+The [2026-10-01 CodeQL report](docs/security/codeql-2026-10-01.md) records a fresh
+scan of merged source, per-finding triage, verification, and a remaining local
+demo-sealing race. It is commit-specific evidence, not approval of a release ZIP.
