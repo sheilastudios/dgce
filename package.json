@@ -2,6 +2,12 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test \"test/*.test.js\""
+    "test": "node --test \"test/*.test.js\"",
+    "vendor:html": "node scripts/vendor-html-parser.mjs",
+    "check:vendor": "node scripts/vendor-html-parser.mjs --check"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2",
+    "parse5": "8.0.1"
   }
 }

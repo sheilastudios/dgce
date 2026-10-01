@@ -1,6 +1,8 @@
 // Read-only saved-session adapter for the observed DreamGen SSR data envelope.
 // This is a bounded data parser, NEVER eval/Function or host-script execution.
-export const SESSION_READBACK = 'dgce:saved-session-readback-v1';
+import { parse as parseHtml } from '../vendor/parse5.js';
+import { SESSION_READBACK } from './session-readback-protocol.js';
+export { SESSION_READBACK } from './session-readback-protocol.js';
 const ORIGIN = 'https://v2.dreamgen.com';
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const MAX_BYTES = 2 * 1024 * 1024;
@@ -79,8 +81,25 @@ function reader(text, start) {
 
 function matchEnvelopes(html) {
   const values = [];
-  for (const script of html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script\s*>/gi)) {
-    const text = script[1];
+  // A real HTML parser supplies boundaries, never script execution or resource
+  // loading. scriptingEnabled controls noscript tokenization, not execution.
+  const document = parseHtml(html, { scriptingEnabled: true, sourceCodeLocationInfo: true });
+  const pending = [document], scripts = [];
+  while (pending.length) {
+    const node = pending.pop();
+    if (node.tagName === 'script' && node.namespaceURI === 'http://www.w3.org/1999/xhtml') {
+      const location = node.sourceCodeLocation;
+      if (!location?.startTag || !location.endTag) throw new Error('Unclosed saved-session script');
+      scripts.push(location);
+    }
+    // Template contents are a separate inert fragment, not childNodes. Never
+    // traverse that fragment or promote its script-looking content to evidence.
+    for (let i = (node.childNodes?.length ?? 0) - 1; i >= 0; i--) pending.push(node.childNodes[i]);
+  }
+  for (const location of scripts.sort((a, b) => a.startOffset - b.startOffset)) {
+    // Slice original bytes-as-text rather than normalized DOM text: literal
+    // route NULs, CRLF and escaping must retain their exact readback meaning.
+    const text = html.slice(location.startTag.endOffset, location.endTag.startOffset);
     for (let at = 0; at < text.length; at++) {
       const char = text[at];
       // Never discover structural keys inside quoted story or script strings.

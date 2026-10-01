@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import { parseSavedSession, readSavedInteraction, installSessionReadback, SESSION_READBACK } from '../extension/host/session-readback.js';
 import { markInjectionObserved } from '../extension/core/injection-lifecycle.js';
 import { canonicalSha256 } from '../extension/core/canonical-json.js';
@@ -8,6 +9,15 @@ const sid = '11111111-2222-4333-8444-555555555555', iid = '11111111-2222-4333-84
 const parent = '11111111-2222-4333-8444-777777777777';
 const route = `\0app\0my\0session\0$sessionId\0\0app\0my\0session\0${sid}\0`;
 const url = `https://v2.dreamgen.com/app/my/session/${sid}`;
+test('sidebar shares the message identity without importing the worker-only HTML parser', async () => {
+  const protocol = await import('../extension/host/session-readback-protocol.js');
+  assert.equal(protocol.SESSION_READBACK, SESSION_READBACK);
+  const panel = await readFile(new URL('../extension/ui/panel.js', import.meta.url), 'utf8');
+  assert.match(panel, /import \{ SESSION_READBACK \} from '\.\.\/host\/session-readback-protocol\.js'/);
+  assert.doesNotMatch(panel, /from ['"][^'"]*(?:session-readback\.js|vendor\/parse5\.js)['"]/);
+  const shared = await readFile(new URL('../extension/host/session-readback-protocol.js', import.meta.url), 'utf8');
+  assert.doesNotMatch(shared, /\bimport\b/);
+});
 test('actual background entry initializes with browser globals and no options object', async t => {
   const before = Object.getOwnPropertyDescriptor(globalThis, 'chrome');
   t.after(() => before ? Object.defineProperty(globalThis, 'chrome', before) : delete globalThis.chrome);
@@ -26,6 +36,39 @@ function fixture(rows = [row()], change = value => value) {
   // Same captured property spelling and $R assignment grammar, synthetic IDs/text.
   return `<script>window.loader={matches:$R[16]=[${JSON.stringify(match)}],lastMatchId:${JSON.stringify(route)}};</script>`;
 }
+
+for (const end of ['</script\t\n bar>', '</SCRIPT data-x="a>b">', '</script/>', '</script / stray>']) {
+  test(`HTML boundaries: browser-recognized end tag ${JSON.stringify(end)}`, () => {
+    const source = fixture().replace('</script>', end);
+    assert.equal(parseSavedSession(source, sid).interactions[0].raw_text, 'I inspect the binder.');
+    const outside = fixture().slice('<script>'.length, -'</script>'.length);
+    assert.throws(() => parseSavedSession(`<script>${end}<div>${outside}</div><script></script>`, sid), /Missing or ambiguous/);
+  });
+}
+
+for (const tag of ['textarea', 'title', 'style', 'xmp', 'iframe', 'noembed', 'noframes', 'noscript', 'template', 'svg', 'math']) {
+  test(`HTML boundaries: a loader-looking script in ${tag} is not session evidence`, () => {
+    const decoy = `<${tag}>${fixture([row('DECOY')])}</${tag}>`;
+    assert.throws(() => parseSavedSession(decoy, sid), /Missing or ambiguous/);
+    assert.equal(parseSavedSession(decoy + fixture(), sid).interactions[0].raw_text, 'I inspect the binder.');
+  });
+}
+
+test('HTML boundaries: comments, attributes, plaintext and incomplete scripts supply no loader', () => {
+  const fake = fixture([row('DECOY')]);
+  for (const decoy of [`<!--${fake}-->`, `<!-->${fake.replace('<script>', '<script-x>')}`, `<div data-example='${fake}'></div>`]) {
+    assert.throws(() => parseSavedSession(decoy, sid));
+    assert.equal(parseSavedSession(decoy + fixture(), sid).interactions[0].raw_text, 'I inspect the binder.');
+  }
+  assert.throws(() => parseSavedSession(`<plaintext>${fake}`, sid));
+  assert.throws(() => parseSavedSession(fixture().replace('</script>', ''), sid));
+});
+
+test('HTML boundaries: quoted greater-than attributes and exact script bytes survive HTML parsing', () => {
+  const raw = 'line one\r\nline two\0&notin; literal';
+  const html = fixture([row(raw)]).replace('<script>', '<SCRIPT data-note="one > two" nonce="test">');
+  assert.equal(parseSavedSession(html, sid).interactions[0].raw_text, raw);
+});
 test('saved session parser reads exact IDs, parent and raw text without inferring list completeness', () => {
   const text = 'Quotes “stay”;\r\n\n<hidden><ext_ctx id="dgce-abcdef">\nbody\n</ext_ctx></hidden>';
   const result = parseSavedSession(fixture([row(text)]), sid);
