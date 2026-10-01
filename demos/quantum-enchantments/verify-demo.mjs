@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict';
-import { createHash } from 'node:crypto';
-import { readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { createHash, randomUUID } from 'node:crypto';
+import * as fs from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-export const expectedFiles = ['DEMO-MANIFEST.json', 'DEMO-STATUS.md', 'README.md', 'RIGHTS.md', 'SCENARIO.md', 'verify-demo.mjs', 'verify-demo.test.mjs'].sort();
+export const expectedFiles = ['DEMO-MANIFEST.json', 'DEMO-STATUS.md', 'README.md', 'RIGHTS.md', 'SCENARIO.md', 'media/QE_DEMO_DreamGen.mp4', 'verify-demo.mjs', 'verify-demo.test.mjs'].sort();
 const requiredFields = ['Title', 'Brief description', 'Public description', 'Setting', 'Player character: Johnny / Bob', 'Character: Hazelnut', 'Style', 'Plot', 'Opening description'];
 
 export function inspectScenario(input) {
@@ -57,36 +57,61 @@ export function inspectScenario(input) {
   return { copyableFields: requiredFields.length, xmlFields: xmlFields.length, openingInteractions: openings.length, optionalDeckCards: cards.length };
 }
 
-export function inventory(root) {
-  const walk = dir => readdirSync(dir, { withFileTypes: true }).flatMap(e => {
+export function inventory(root, io = fs) {
+  const walk = dir => io.readdirSync(dir, { withFileTypes: true }).flatMap(e => {
     assert.ok(!e.isSymbolicLink(), 'symlink disallowed');
     return e.isDirectory() ? walk(join(dir, e.name)) : [join(dir, e.name)];
   });
   const files = walk(root).map(p => relative(root, p).replaceAll('\\', '/')).sort();
   assert.deepEqual(files, expectedFiles, 'unexpected or missing package members');
   return files.filter(p => p !== 'DEMO-MANIFEST.json').map(path => {
-    const data = readFileSync(join(root, path));
+    const data = io.readFileSync(join(root, path));
     return { path, bytes: data.length, sha256: createHash('sha256').update(data).digest('hex') };
   });
 }
 
 export function verifyManifest(manifest, entries) {
+  assert.equal(manifest.schema, 3);
   assert.equal(manifest.package, 'QE-The-Waykey-expanded-demo-r3');
   assert.equal(manifest.livePlaytestScope, 'focused-private-clone-not-end-to-end');
   assert.equal(manifest.stableReleaseApproved, false);
   assert.deepEqual(manifest.files, entries, 'artifact hash/inventory mismatch');
 }
 
+// Maintainer-only operation on a quiescent package directory, not a signing or
+// authorization boundary. Never truncate/unlink the previous manifest first.
+export function sealManifest(root, io = fs) {
+  inspectScenario(io.readFileSync(join(root, 'SCENARIO.md'), 'utf8'));
+  const files = inventory(root, io);
+  const manifest = { schema: 3, package: 'QE-The-Waykey-expanded-demo-r3', date: '2026-09-30', livePlaytestScope: 'focused-private-clone-not-end-to-end', stableReleaseApproved: false, excludes: 'Manifest excludes itself; any external ZIP SHA must bind all members.', files };
+  verifyManifest(manifest, files);
+  const serialized = JSON.stringify(manifest, null, 2) + '\n';
+  const temporary = join(root, `.DEMO-MANIFEST-${randomUUID()}.tmp`);
+  let fd = null, ownsTemporary = false;
+  try {
+    fd = io.openSync(temporary, 'wx', 0o600);
+    ownsTemporary = true;
+    io.writeFileSync(fd, serialized, 'utf8');
+    io.fsyncSync(fd);
+    io.closeSync(fd);
+    fd = null;
+    assert.equal(io.readFileSync(temporary, 'utf8'), serialized, 'temporary manifest readback mismatch');
+    // Same-directory replacement; if rename fails, the old file remains.
+    // Do not fall back to deleting the destination on Windows or elsewhere.
+    io.renameSync(temporary, join(root, 'DEMO-MANIFEST.json'));
+    ownsTemporary = false;
+    return manifest;
+  } finally {
+    try { if (fd !== null) io.closeSync(fd); }
+    finally { if (ownsTemporary) io.unlinkSync(temporary); }
+  }
+}
+
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const root = dirname(fileURLToPath(import.meta.url));
-  const results = inspectScenario(readFileSync(join(root, 'SCENARIO.md'), 'utf8'));
-  if (process.argv.includes('--seal')) {
-    // Generated manifest only; the archive SHA binds this manifest too.
-    writeFileSync(join(root, 'DEMO-MANIFEST.json'), '{}\n');
-    const files = inventory(root);
-    writeFileSync(join(root, 'DEMO-MANIFEST.json'), JSON.stringify({ schema: 3, package: 'QE-The-Waykey-expanded-demo-r3', date: '2026-09-30', livePlaytestScope: 'focused-private-clone-not-end-to-end', stableReleaseApproved: false, excludes: 'Manifest excludes itself; any external ZIP SHA must bind all members.', files }, null, 2) + '\n');
-  }
+  const results = inspectScenario(fs.readFileSync(join(root, 'SCENARIO.md'), 'utf8'));
+  if (process.argv.includes('--seal')) sealManifest(root);
   const entries = inventory(root);
-  verifyManifest(JSON.parse(readFileSync(join(root, 'DEMO-MANIFEST.json'), 'utf8')), entries);
+  verifyManifest(JSON.parse(fs.readFileSync(join(root, 'DEMO-MANIFEST.json'), 'utf8')), entries);
   console.log(JSON.stringify({ ...results, hashesPassed: entries.length, exactInventory: expectedFiles.length, livePlaytestScope: 'focused-private-clone-not-end-to-end', stableReleaseApproved: false }, null, 2));
 }
