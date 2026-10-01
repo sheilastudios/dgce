@@ -21,7 +21,7 @@
 import { describeCard } from './archivist-input.js';
 import { drawLine } from './deck.js';
 import { estimateTokens, enforcementTarget } from './tokens.js';
-import { IS_FREE_EDITION, assertEditionWorkspace } from './edition.js';
+import { assertEditionWorkspace } from './edition.js';
 
 const NONCE_PREFIX = 'dgce-';
 

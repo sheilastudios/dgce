@@ -30,7 +30,7 @@ import { continuityTools } from './continuity-tools.js';
 import { assertContinuityIdle } from '../core/continuity-transfer.js';
 import { confirmByUser, unconfirmByUser, considerUserTurn } from '../core/confirmation.js';
 import { applyPreimage } from '../core/undo.js';
-import { exportToJSON, importWorkspace, inspectImport, resetWorkspace } from '../core/portable.js';
+import { exportToJSON, importWorkspace, inspectImport } from '../core/portable.js';
 import {
   MODES as DECK_MODES,
   setMode as setDeckMode,
@@ -46,7 +46,6 @@ import {
   proposeCards,
   isEnabled as deckEnabled,
   isAssisted as deckAssisted,
-  DeckError,
 } from '../core/deck.js';
 import {
   WorkspaceStore,
@@ -55,7 +54,7 @@ import {
   watchExternalWrites,
   writeWithConflictRetry,
 } from '../storage.js';
-import { buildInjection, stripInjections, stripRecordedInjection, semanticInjectionText, augmentTurn, makeInjectionRecord, wrapInjection } from '../core/injection.js';
+import { buildInjection, stripInjections, stripRecordedInjection, semanticInjectionText, augmentTurn, wrapInjection } from '../core/injection.js';
 import { canonicalSha256 } from '../core/canonical-json.js';
 import { stageForNextTurn } from '../core/archivist-input.js';
 import { drawCard } from '../core/deck.js';
@@ -63,10 +62,6 @@ import { installNetworkEvidence, bindNativeRequest, recordNativeRelease } from '
 import { installMechanicalSubmit } from '../host/mechanical-submit.js';
 import { assertInteractionSourceFidelity } from '../host/check-source.js';
 import {
-  recordInjection,
-} from '../host/prune.js';
-import {
-  INJECTION_LIFECYCLE,
   REMOVAL_READBACK_KIND,
   injectionLifecycleStatus,
   markInjectionHostSaveVerified,
@@ -87,11 +82,10 @@ import {
 } from '../core/temporal-integrity.js';
 import {
   roleplayEditorIdle,
-  inspectOwnedInjectionHistory,
   sweepOwnedInjectionHistory,
   discoverOwnedInjectionCarriers,
 } from '../host/injection-prune.js';
-import { ask as askAssistant, probe as probeAssistant, AssistantError } from '../host/assistant.js';
+import { ask as askAssistant, probe as probeAssistant } from '../host/assistant.js';
 import { watchAndConceal } from '../host/conceal.js';
 import { runArchivist } from '../host/archivist-run.js';
 import { WorkspaceMutationQueue } from '../host/turn-persistence.js';
@@ -102,8 +96,7 @@ import {
   protectedCardMatch,
   reconcileCardAuthority,
 } from '../core/entity-authority.js';
-import { COMPOSER_SELECTOR, setComposerText } from '../host/command-palette.js';
-import { readAuthoredEntities, findAuthored, authoredNames } from '../host/scenario.js';
+import { readAuthoredEntities, findAuthored } from '../host/scenario.js';
 import { loadedInteractionRoots, hasHistoryCompletenessWitness, armHistoryLocalSend, invalidateHistoryContinuity, attestEmptySessionHistory, canAttestEmptySessionHistory } from '../host/builder-transcript.js';
 import { captureOpeningSessionHistory, openingSessionHistoryMatches, attestOpeningSessionHistory } from '../host/builder-transcript.js';
 import { settleHistoryContinuity, historyContinuityScope, historyContinuityDiagnostics, historyLoadControl } from '../host/builder-transcript.js';
@@ -111,7 +104,7 @@ import { SESSION_READBACK } from '../host/session-readback-protocol.js';
 import { plainOrdinaryBinding, matchesPlainOrdinaryBinding, completePlainOrdinaryReadback } from '../host/ordinary-readback.js';
 
 const KIND_TABS = { npc: 'People', location: 'Places', event: 'Events', object: 'Objects' };
-const TABS = IS_FREE_EDITION ? FREE_TABS : ['Campaign', 'Memory', 'People', 'Places', 'Events', 'Objects', 'Resolve', 'Deck', 'Schedules', 'RNG', 'Log', 'Debug', 'Data'];
+const TABS = FREE_TABS;
 const SURFACES = [
   ['event_log', 'Event Log'],
   ['social_context', 'Social Context'],
@@ -386,15 +379,13 @@ async function prepareOrdinarySubmission(text, unchanged) {
   if (!unchanged() || state.mutationGeneration !== generation) throw new Error('Turn changed during history settlement. Draft preserved.');
   const candidate = structuredClone(base);
   const priorBanner = state.banner;
-  let result, injection, preparedBanner;
+  let injection, preparedBanner;
   try {
-    result = onUserTurn(text, candidate);
+    onUserTurn(text, candidate);
     injection = planInjection(text, candidate);
     preparedBanner = state.banner;
   } finally { state.banner = priorBanner; }
-  const action = typeof result?.replacementText === 'string' && result.replacementText.trim()
-    ? result.replacementText.trim() : text;
-  const outgoingText = injection ? augmentTurn(action, injection.block) : action;
+  const outgoingText = injection ? augmentTurn(text, injection.block) : text;
   await state.persistenceQueue?.whenIdle();
   current();
   if (!unchanged()) throw new Error('Draft changed while preparing context. Nothing committed or sent.');
@@ -542,27 +533,6 @@ function recentModelTurns(limit = 5) {
     .filter((t) => t.length > 80)
     .slice(-limit)
     .reverse();
-}
-
-function recentModelInteractions(limit = 3) {
-  assertInteractionSourceFidelity(document);
-  const outputs = [...document.querySelectorAll('div.OUTPUT')]
-    .map((element) => semanticInjectionText(element.innerText || '').trim())
-    .filter(Boolean)
-    .slice(-limit)
-    .reverse();
-  if (outputs.length) return outputs;
-  return recentModelTurns(Math.max(3, limit * 4));
-}
-
-function transcriptText({ includeHidden = false } = {}) {
-  assertInteractionSourceFidelity(document);
-  const scroller = [...document.querySelectorAll('div')].find((d) => {
-    const r = d.getBoundingClientRect();
-    return r.x < 900 && r.width > 400 && d.scrollHeight > d.clientHeight + 200;
-  });
-  const source = includeHidden ? scroller?.textContent : scroller?.innerText;
-  return semanticInjectionText(source || '');
 }
 
 function markNativeSubmissionAttempt() {
@@ -1694,18 +1664,6 @@ function numberSetting(key, label, { min = 0, max = 999 } = {}) {
   return el('div', {}, el('label', {}, label), input);
 }
 
-function checkboxSetting(key, label) {
-  const input = el('input', { type: 'checkbox' });
-  input.checked = Boolean(state.ws.settings[key]);
-  input.addEventListener('change', () =>
-    commit((ws) => {
-      setWorkspaceSetting(ws, key, input.checked);
-    }),
-  );
-
-  return el('label', { class: 'checkline' }, input, label);
-}
-
 function schedulesTab() {
   const budget = state.ws.settings.max_archivist_promotions_per_run;
   const cadence = state.ws.settings.archivist_cadence_turns;
@@ -2435,7 +2393,7 @@ function continuityToolsSection() {
     assertContinuityIdle(ws);
   };
   return continuityTools({ el, ws: state.ws, draft: state.continuityToolsDraft, readAuthored: readAuthoredEntities, render,
-    mutate: fn => commit(ws => { guard(ws); fn(ws); reconcileCardAuthority(ws, definedEntityGroups(ws)); }, { requireLock: true }),
+    mutate: fn => commit(ws => { guard(ws); fn(ws); reconcileCardAuthority(ws, definedEntityGroups()); }, { requireLock: true }),
     notify: text => { state.banner = { kind: 'info', text }; render(); },
     copy: text => navigator.clipboard.writeText(text),
     download: (filename, text) => {
