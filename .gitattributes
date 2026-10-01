@@ -1,0 +1,3 @@
+# Reproducible generated output must retain its exact LF bytes on Windows too.
+/extension/vendor/parse5.js text eol=lf
+/extension/vendor/THIRD_PARTY.txt text eol=lf

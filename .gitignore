@@ -8,6 +8,7 @@ Thumbs.db
 # Logs and local test output
 *.log
 coverage/
+node_modules/
 .nyc_output/
 
 # Local packaging artifacts

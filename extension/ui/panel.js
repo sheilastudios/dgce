@@ -107,7 +107,7 @@ import { readAuthoredEntities, findAuthored, authoredNames } from '../host/scena
 import { loadedInteractionRoots, hasHistoryCompletenessWitness, armHistoryLocalSend, invalidateHistoryContinuity, attestEmptySessionHistory, canAttestEmptySessionHistory } from '../host/builder-transcript.js';
 import { captureOpeningSessionHistory, openingSessionHistoryMatches, attestOpeningSessionHistory } from '../host/builder-transcript.js';
 import { settleHistoryContinuity, historyContinuityScope, historyContinuityDiagnostics, historyLoadControl } from '../host/builder-transcript.js';
-import { SESSION_READBACK } from '../host/session-readback.js';
+import { SESSION_READBACK } from '../host/session-readback-protocol.js';
 import { plainOrdinaryBinding, matchesPlainOrdinaryBinding, completePlainOrdinaryReadback } from '../host/ordinary-readback.js';
 
 const KIND_TABS = { npc: 'People', location: 'Places', event: 'Events', object: 'Objects' };
