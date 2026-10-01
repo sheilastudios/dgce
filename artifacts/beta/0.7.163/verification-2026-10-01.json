@@ -1,0 +1,20 @@
+{
+  "version": "0.7.163",
+  "sourceCommit": "f5722b186785352e99164f2b97731c277ac43c86",
+  "sourceCommitShort": "f5722b1",
+  "zip": "DGCE_0.7.163_with_QE_demo_beta_2026-10-01.zip",
+  "sha256": "7c0c1c71de4d5f8035da07e95dae253e0851abbca980f551776ed86d37e6d21f",
+  "bytes": 40277666,
+  "packageRoot": "dgce/",
+  "inventoryFiles": 156,
+  "hashesVerified": 155,
+  "extensionTests": { "pass": 766, "fail": 0 },
+  "demoTests": { "pass": 27, "fail": 0 },
+  "livePlaytestScope": "focused-private-clone-not-end-to-end",
+  "stableReleaseApproved": false,
+  "notes": [
+    "Packaged from current repo state after the latest remote CodeQL and demo-manifest merges.",
+    "Supersedes the earlier same-day local package built before upstream origin/main advanced.",
+    "Fresh zip/extract verification rerun completed successfully."
+  ]
+}
