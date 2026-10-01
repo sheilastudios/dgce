@@ -13,13 +13,13 @@
     },
     {
       "path": "README.md",
-      "bytes": 1044,
-      "sha256": "a5b6af049fa9bad56fd80a9f8870a846eb8fbec06c09e4869942f973256a4be0"
+      "bytes": 2253,
+      "sha256": "62d5dc015266da91ec3b312d5492845ee70013e6ac69219c07f285309e4f7602"
     },
     {
       "path": "RIGHTS.md",
-      "bytes": 1236,
-      "sha256": "d98ef71388036aada2b35a47edd432e11e6bfe4b83e435d0f51596b81f8b4ac2"
+      "bytes": 1208,
+      "sha256": "bc7a1dcacd64f183926e4a3c955de75f4c402ca2dad02bd662838435f20a71ad"
     },
     {
       "path": "SCENARIO.md",
@@ -27,14 +27,19 @@
       "sha256": "235fd885c7dcdf8002af116a0d90a3d5305ff8d6924b32965dff41be36e38420"
     },
     {
+      "path": "media/QE_DEMO_DreamGen.mp4",
+      "bytes": 41185709,
+      "sha256": "531efff60f80289e1bf8c2547af76e129f899c7b3d907b1d1afeaf55d57b573d"
+    },
+    {
       "path": "verify-demo.mjs",
-      "bytes": 6347,
-      "sha256": "f073a90815a352d507fd5c4c7ad35ddb140a47c560ba2a100495525c6a656816"
+      "bytes": 7391,
+      "sha256": "0327da6c7bc8249345d44418d900daaf62432a7c56366867f97a2ab2fa3c1d4e"
     },
     {
       "path": "verify-demo.test.mjs",
-      "bytes": 2449,
-      "sha256": "39c683d7516319faae959fdde5c81a8b71a227f38b2b26ef44e0266c09dae0f6"
+      "bytes": 8323,
+      "sha256": "811eaaca4e0f3c38978998b10d8a657c6eb23b56a7a738121b257d177d717a19"
     }
   ]
 }

@@ -2,7 +2,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test \"test/*.test.js\"",
+    "test": "node --test \"test/*.test.js\" \"demos/quantum-enchantments/*.test.mjs\"",
+    "test:demo": "node --test \"demos/quantum-enchantments/*.test.mjs\"",
     "vendor:html": "node scripts/vendor-html-parser.mjs",
     "check:vendor": "node scripts/vendor-html-parser.mjs --check"
   },

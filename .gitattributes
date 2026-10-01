@@ -1,3 +1,9 @@
 # Reproducible generated output must retain its exact LF bytes on Windows too.
 /extension/vendor/parse5.js text eol=lf
 /extension/vendor/THIRD_PARTY.txt text eol=lf
+
+# Demo inventory hashes exact bytes; keep text stable across platform checkouts.
+/demos/quantum-enchantments/*.md text eol=lf
+/demos/quantum-enchantments/*.mjs text eol=lf
+/demos/quantum-enchantments/*.json text eol=lf
+/demos/quantum-enchantments/media/QE_DEMO_DreamGen.mp4 -text
